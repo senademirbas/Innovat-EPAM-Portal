@@ -1,7 +1,4 @@
 # Innovat-EPAM-Portal
-
-<img width="1375" height="827" alt="image" src="https://github.com/user-attachments/assets/a0cea522-05ff-4397-b602-567c65072a66" />
-
 Innovat-EPAM-Portal is a web application designed for managing project ideas within an innovation framework. It features a robust user authentication system and an idea submission engine with file attachment support.
 
 ## Key Features
@@ -34,7 +31,7 @@ Innovat-EPAM-Portal is a web application designed for managing project ideas wit
 
 1. Clone the repository:
    ```bash
-   git clone <repo-url>
+   git clone https://github.com/senademirbas/Innovat-EPAM-Portal.git
    cd Innovat-EPAM-Portal
    ```
 
@@ -56,6 +53,8 @@ The API will be available at `http://127.0.0.1:8000`.
 FastAPI provides automatic interactive documentation:
 - **Swagger UI**: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
 - **ReDoc**: [http://127.0.0.1:8000/redoc](http://127.0.0.1:8000/redoc)
+
+<img width="1375" height="827" alt="image" src="https://github.com/user-attachments/assets/a0cea522-05ff-4397-b602-567c65072a66" />
 
 ## Testing
 
