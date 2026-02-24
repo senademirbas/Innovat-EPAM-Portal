@@ -13,6 +13,8 @@ class Idea(Base):
     description = Column(Text, nullable=False)
     category = Column(String, nullable=False)
     file_path = Column(String, nullable=True)
+    status = Column(String, default="submitted")
+    admin_comment = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
