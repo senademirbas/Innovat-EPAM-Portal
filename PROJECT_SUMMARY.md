@@ -40,4 +40,4 @@ The most important takeaway is that **Specs are the Source of Truth**. By docume
 ---
 **Author**: senademirbas
 **Date**: 2026-02-25
-**Course**: A201 - Beyond Vibe Coding
+**Course**: A!tech Bootcamp
