@@ -1,0 +1,40 @@
+[project]
+name = "innovat-epam-portal"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "senademirbas", email = "senademirbas@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.18.4",
+    "bcrypt>=5.0.0",
+    "fastapi>=0.133.0",
+    "passlib[bcrypt]>=1.7.4",
+    "pydantic[email]>=2.12.5",
+    "python-jose[cryptography]>=3.5.0",
+    "python-multipart>=0.0.22",
+    "sqlalchemy>=2.0.47",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.4,<0.11.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "httpx>=0.28.1",
+    "pytest>=9.0.2",
+    "pytest-cov>=7.0.0",
+    "ruff>=0.15.2",
+]
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I", "N", "PL"]
+ignore = ["E501"] # Ignore long lines if handled by formatter
+fix = true
+
+[tool.ruff.isort]
+known-first-party = ["app"]
