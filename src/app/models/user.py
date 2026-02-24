@@ -1,6 +1,7 @@
 import uuid
 from sqlalchemy import Column, String, Boolean, Enum
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
 from src.app.db.session import Base
 
 class User(Base):
@@ -12,3 +13,5 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     role = Column(String, default="submitter") # submitter or admin
     is_active = Column(Boolean, default=True)
+
+    ideas = relationship("Idea", back_populates="owner")

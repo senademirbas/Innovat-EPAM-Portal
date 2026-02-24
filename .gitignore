@@ -156,3 +156,4 @@ test_result*.txt
 diag_step.py
 run_tests.py
 manual_test.py
+uploads/
