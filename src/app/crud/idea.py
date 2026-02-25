@@ -19,6 +19,9 @@ def get_user_ideas(db: Session, user_id: str, skip: int = 0, limit: int = 100):
 def get_idea(db: Session, idea_id: str):
     return db.query(Idea).filter(Idea.id == idea_id).first()
 
+def get_all_ideas(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(Idea).offset(skip).limit(limit).all()
+
 def evaluate_idea(db: Session, idea_id: str, status: str, comment: str = None):
     db_idea = get_idea(db, idea_id)
     if db_idea:

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InnovatEPAM Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-900 min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm border-b sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-2">
+                    <div class="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">I</div>
+                    <span class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">InnovatEPAM</span>
+                </div>
+                <div id="nav-user" class="hidden flex items-center space-x-4">
+                    <span id="user-display" class="text-sm font-medium text-gray-600"></span>
+                    <button id="logout-btn" class="text-sm text-red-600 hover:text-red-700 font-medium">Logout</button>
+                    <div id="role-badge" class="px-2 py-0.5 rounded text-xs font-semibold"></div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-4xl">
+        
+        <!-- Auth View -->
+        <div id="auth-view" class="space-y-8">
+            <div class="text-center">
+                <h1 class="text-3xl font-extrabold text-gray-900">Welcome to InnovatEPAM</h1>
+                <p class="mt-2 text-gray-600">Share your innovative ideas and shape the future.</p>
+            </div>
+
+            <div class="bg-white p-8 rounded-xl shadow-lg border border-gray-100 max-w-md mx-auto">
+                <!-- Login Form -->
+                <form id="login-form" class="space-y-4">
+                    <h2 class="text-xl font-bold mb-4">Login</h2>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="login-email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="login-password" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        Sign In
+                    </button>
+                    <p class="text-center text-sm text-gray-600">
+                        Don't have an account? <a href="#" id="to-register" class="text-blue-600 hover:underline">Register here</a>
+                    </p>
+                </form>
+
+                <!-- Register Form (Hidden) -->
+                <form id="register-form" class="hidden space-y-4">
+                    <h2 class="text-xl font-bold mb-4">Create Account</h2>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" id="reg-name" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Email</label>
+                        <input type="email" id="reg-email" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="reg-password" required minlength="8" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                    </div>
+                    <button type="submit" class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                        Register
+                    </button>
+                    <p class="text-center text-sm text-gray-600">
+                        Already have an account? <a href="#" id="to-login" class="text-blue-600 hover:underline">Login here</a>
+                    </p>
+                </form>
+            </div>
+        </div>
+
+        <!-- Submitter View -->
+        <div id="submitter-view" class="hidden space-y-8">
+            <div class="flex justify-between items-end">
+                <div>
+                    <h1 class="text-2xl font-bold">Submitter Dashboard</h1>
+                    <p class="text-gray-600">Create new ideas and track your submissions.</p>
+                </div>
+                <button id="show-idea-form" class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                    New Idea
+                </button>
+            </div>
+
+            <!-- Idea Submission Form -->
+            <div id="idea-form-container" class="hidden bg-white p-6 rounded-xl shadow border border-gray-100 animate-slide-down">
+                <form id="idea-form" class="space-y-4">
+                    <h2 class="text-lg font-bold">New Innovation Idea</h2>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" id="idea-title" required minlength="3" maxlength="100" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Category</label>
+                        <select id="idea-category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                            <option value="Productivity">Productivity</option>
+                            <option value="Sustainability">Sustainability</option>
+                            <option value="Customer Experience">Customer Experience</option>
+                            <option value="Technical Excellence">Technical Excellence</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea id="idea-description" required minlength="10" maxlength="2000" rows="4" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Attachment (Optional)</label>
+                        <input type="file" id="idea-attachment" class="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-idea" class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">Cancel</button>
+                        <button type="submit" class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700">Submit Idea</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- My Ideas List -->
+            <div class="space-y-4">
+                <h2 class="text-lg font-bold">My Submissions</h2>
+                <div id="my-ideas-list" class="grid gap-4">
+                    <!-- Ideas will be injected here -->
+                    <p class="text-gray-500 italic">No ideas submitted yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin View -->
+        <div id="admin-view" class="hidden space-y-8">
+            <div>
+                <h1 class="text-2xl font-bold">Admin Control Center</h1>
+                <p class="text-gray-600">Review and evaluate all submitted ideas.</p>
+            </div>
+
+            <div class="bg-white overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                <table class="min-w-full divide-y divide-gray-300">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6">Idea</th>
+                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Category</th>
+                            <th class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Status</th>
+                            <th class="relative py-3.5 pl-3 pr-4 sm:pr-6">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="admin-ideas-list" class="divide-y divide-gray-200 bg-white">
+                        <!-- Admin ideas will be injected here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center text-gray-500 text-sm">
+            &copy; 2026 InnovatEPAM Portal. Empowering innovation.
+        </div>
+    </footer>
+
+    <!-- Notification Overlay -->
+    <div id="notification" class="fixed bottom-4 right-4 max-w-sm w-full bg-white border rounded-lg shadow-lg transform translate-y-24 transition-transform duration-300 z-50 p-4">
+        <p id="notification-msg" class="text-sm font-medium text-gray-800"></p>
+    </div>
+
+    <!-- Evaluation Modal -->
+    <div id="eval-modal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Evaluate Idea</h3>
+                <form id="eval-form" class="space-y-4">
+                    <input type="hidden" id="eval-idea-id">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Status</label>
+                        <select id="eval-status" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border">
+                            <option value="Under Review">Under Review</option>
+                            <option value="Accepted">Accepted</option>
+                            <option value="Rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700">Admin Comment</label>
+                        <textarea id="eval-comment" rows="3" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"></textarea>
+                    </div>
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="close-eval" class="px-4 py-2 bg-gray-100 text-gray-700 text-sm font-medium rounded-md hover:bg-gray-200">Close</button>
+                        <button type="submit" class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700">Save</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
