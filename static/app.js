@@ -1,151 +1,231 @@
 /**
- * InnovatEPAM Portal – app.js v4 (Social SaaS)
- * Card Feed • Multi-Step Form • Timeline Modal • Social Profile
+ * InnovatEPAM — app.js v5 (Premium SaaS)
+ * Sidebar ▸ Drawers ▸ Skeleton Loaders ▸ Spline Chart ▸ Social Profile
  */
 
-// ─── State ─────────────────────────────────────────────────────────────────
+// ─── State ───────────────────────────────────────────────────────────────────
 const state = {
     token: localStorage.getItem('token'),
     user: null,
-    submissionsChart: null,
+    allIdeas: [],          // cached for client-side filter
+    adminIdeas: [],
+    activeFilter: 'all',
+    chart: null,
+    sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
     selectedTags: new Set(),
     currentStep: 1,
 };
 
-// ─── DOM helper ──────────────────────────────────────────────────────────────
-const $ = (id) => document.getElementById(id);
+// ─── DOM shortcut ─────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
 
-// ─── API ─────────────────────────────────────────────────────────────────────
-async function apiFetch(path, options = {}) {
-    const headers = { ...(options.headers || {}) };
-    if (state.token && !(options.body instanceof FormData)) {
+// ─── API ──────────────────────────────────────────────────────────────────────
+async function apiFetch(path, opts = {}) {
+    const headers = { ...(opts.headers || {}) };
+    if (state.token && !(opts.body instanceof FormData)) {
         headers['Content-Type'] = 'application/json';
     }
     if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
-    return fetch(path, { ...options, headers });
+    const res = await fetch(path, { ...opts, headers });
+    return res;
 }
 
-// ─── Toast ───────────────────────────────────────────────────────────────────
-function showToast(msg, type = 'success') {
-    const t = $('toast');
-    $('toast-icon').textContent = type === 'success' ? '✓' : '✗';
-    $('toast-message').textContent = msg;
-    t.className = `toast toast-${type}`;
-    setTimeout(() => { t.className = 'toast hidden-toast'; }, 3500);
-}
-
-// ─── Theme ───────────────────────────────────────────────────────────────────
+// ─── Theme ────────────────────────────────────────────────────────────────────
 function applyTheme(theme) {
-    if (theme === 'dark') {
-        document.documentElement.classList.add('dark');
-        $('icon-sun').classList.remove('hidden');
-        $('icon-moon').classList.add('hidden');
-    } else {
-        document.documentElement.classList.remove('dark');
-        $('icon-moon').classList.remove('hidden');
-        $('icon-sun').classList.add('hidden');
-    }
+    document.body.classList.toggle('light', theme !== 'dark');
+    $('icon-sun').classList.toggle('hidden', theme !== 'dark');
+    $('icon-moon').classList.toggle('hidden', theme === 'dark');
     localStorage.setItem('theme', theme);
 }
-applyTheme(localStorage.getItem('theme') || 'light');
+applyTheme(localStorage.getItem('theme') || 'dark');
+
 $('theme-toggle').addEventListener('click', () => {
-    applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
+    const isDark = !document.body.classList.contains('light');
+    applyTheme(isDark ? 'light' : 'dark');
+    if (state.chart) rebuildChart();
 });
 
-// ─── Navbar ──────────────────────────────────────────────────────────────────
-function avatarFor(user) {
-    if (user?.avatar_url) return `<img src="${user.avatar_url}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none';this.parentNode.textContent='${(user.email || '?')[0].toUpperCase()}'">`;
-    return (user?.email || '?')[0].toUpperCase();
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let _toastTimer;
+function showToast(msg, type = 'success') {
+    const el = $('toast');
+    clearTimeout(_toastTimer);
+    $('toast-icon').textContent = type === 'success' ? '✓' : '✗';
+    $('toast-message').textContent = msg;
+    el.className = `toast toast-${type}`;
+    _toastTimer = setTimeout(() => { el.className = 'toast toast-hidden'; }, 3500);
 }
 
-function showNavUser(user) {
-    $('nav-user-info').classList.remove('hidden');
-    $('nav-user-info').classList.add('flex');
-    $('nav-tabs').classList.remove('hidden');
-    $('nav-tabs').classList.add('flex');
-    $('nav-email').textContent = user.email;
-    $('nav-avatar').innerHTML = avatarFor(user);
+// ─── Skeleton loaders ─────────────────────────────────────────────────────────
+function showSkeletons(containerId, n = 6) {
+    const heights = [120, 160, 100, 180, 140, 120];
+    $(containerId).innerHTML = Array.from({ length: n }, (_, i) => `
+        <div class="skeleton-card">
+            <div style="display:flex;align-items:center;gap:0.625rem;margin-bottom:0.5rem">
+                <div class="skeleton" style="width:2.25rem;height:2.25rem;border-radius:50%;flex-shrink:0"></div>
+                <div style="flex:1">
+                    <div class="skeleton" style="height:0.75rem;width:60%;margin-bottom:0.375rem"></div>
+                    <div class="skeleton" style="height:0.625rem;width:40%"></div>
+                </div>
+            </div>
+            <div class="skeleton" style="height:1rem;width:80%;margin-bottom:0.375rem"></div>
+            <div class="skeleton" style="height:${heights[i % heights.length]}px;width:100%"></div>
+        </div>`
+    ).join('');
+}
 
-    const badge = $('nav-role-badge');
-    if (user.role === 'admin') {
-        badge.textContent = 'Admin';
-        badge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
-        $('tab-admin').classList.remove('hidden');
-        $('tab-ideas').classList.add('hidden');
+// ─── Sidebar ──────────────────────────────────────────────────────────────────
+function toggleSidebar() {
+    const sidebar = $('sidebar');
+    const shell = $('app-shell');
+    const isMobile = window.innerWidth <= 768;
+    if (isMobile) {
+        sidebar.classList.toggle('mobile-open');
+        $('sidebar-overlay').classList.toggle('visible', sidebar.classList.contains('mobile-open'));
     } else {
-        badge.textContent = 'Submitter';
-        badge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300';
-        $('tab-admin').classList.add('hidden');
-        $('tab-ideas').classList.remove('hidden');
+        state.sidebarCollapsed = !state.sidebarCollapsed;
+        sidebar.classList.toggle('collapsed', state.sidebarCollapsed);
+        shell.classList.toggle('sidebar-collapsed', state.sidebarCollapsed);
+        localStorage.setItem('sidebarCollapsed', state.sidebarCollapsed);
     }
 }
-
-function hideNavUser() {
-    $('nav-user-info').classList.add('hidden');
-    $('nav-user-info').classList.remove('flex');
-    $('nav-tabs').classList.add('hidden');
-    $('nav-tabs').classList.remove('flex');
+function closeSidebar() {
+    $('sidebar').classList.remove('mobile-open');
+    $('sidebar-overlay').classList.remove('visible');
+}
+// Apply saved collapse state
+if (state.sidebarCollapsed && window.innerWidth > 768) {
+    $('sidebar').classList.add('collapsed');
+    $('app-shell').classList.add('sidebar-collapsed');
 }
 
-// ─── View switching ──────────────────────────────────────────────────────────
-function showView(view) {
-    ['auth', 'submitter', 'admin', 'profile'].forEach(v => {
+// ─── Avatar dropdown ─────────────────────────────────────────────────────────
+function toggleAvatarDropdown() {
+    $('avatar-dropdown').classList.toggle('hidden');
+}
+function closeDropdown() {
+    $('avatar-dropdown').classList.add('hidden');
+}
+document.addEventListener('click', e => {
+    if (!e.target.closest('#avatar-dropdown-btn') && !$('avatar-dropdown').classList.contains('hidden')) {
+        closeDropdown();
+    }
+});
+
+// ─── View Router ──────────────────────────────────────────────────────────────
+function routeTo(view) {
+    ['feed', 'admin', 'profile'].forEach(v => {
         const el = $(`${v}-view`);
         if (el) el.classList.add('hidden');
     });
-    const t = $(`${view}-view`);
-    if (t) t.classList.remove('hidden');
+    const target = $(`${view}-view`);
+    if (target) target.classList.remove('hidden');
+
+    // Update sidebar active state
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navMap = { feed: 'nav-ideas', admin: 'nav-admin', profile: 'nav-profile' };
+    const activeNav = $(navMap[view]);
+    if (activeNav) activeNav.classList.add('active');
+
+    // Close mobile sidebar on navigation
+    closeSidebar();
+
+    // Load data for view
+    if (view === 'feed') loadMyIdeas();
+    if (view === 'admin') { loadAllIdeas(); loadAdminStats(); }
+    if (view === 'profile') loadProfile();
 }
 
-function activateTab(viewName) {
-    document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector(`.nav-tab[data-view="${viewName}"]`);
-    if (btn) btn.classList.add('active');
-    showView(viewName);
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function fmtDate(iso) {
+    return new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function fmtDateTime(iso) {
+    return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
-document.querySelectorAll('.nav-tab').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const view = btn.dataset.view;
-        activateTab(view);
-        if (view === 'profile') { loadUserProfile(); }
-        if (view === 'admin') { loadAllIdeas(); loadAdminStats(); }
-        if (view === 'submitter') { loadMyIdeas(); }
-    });
-});
+const STATUS_BADGE = {
+    submitted: '<span class="badge badge-submitted">Pending</span>',
+    accepted: '<span class="badge badge-accepted">Accepted</span>',
+    rejected: '<span class="badge badge-rejected">Rejected</span>',
+};
+
+const TAG_COLORS = ['tag-cyan', 'tag-purple', 'tag-green', 'tag-amber', 'tag-pink'];
+function tagColor(t) {
+    let h = 0;
+    for (const c of t) h = ((h * 31) + c.charCodeAt(0)) | 0;
+    return TAG_COLORS[Math.abs(h) % TAG_COLORS.length];
+}
+function renderTagPills(tags) {
+    if (!tags) return '';
+    return tags.split(',').map(t => t.trim()).filter(Boolean)
+        .map(t => `<span class="tag-pill ${tagColor(t)}">${t}</span>`).join('');
+}
+
+function avatarHtml(user, cls = 'avatar') {
+    const letter = (user?.email || '?')[0].toUpperCase();
+    if (user?.avatar_url) {
+        return `<div class="${cls}"><img src="${user.avatar_url}" alt="" onerror="this.parentElement.textContent='${letter}'"></div>`;
+    }
+    return `<div class="${cls}">${letter}</div>`;
+}
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
+function populateUserUI(user) {
+    state.user = user;
+    const letter = user.email[0].toUpperCase();
+
+    // Sidebar avatar + info
+    $('sidebar-avatar').textContent = letter;
+    if (user.avatar_url) {
+        $('sidebar-avatar').innerHTML = `<img src="${user.avatar_url}" alt="" onerror="this.parentElement.textContent='${letter}'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    }
+    $('sidebar-user-email').textContent = user.email.split('@')[0];
+    $('sidebar-user-role').textContent = user.role === 'admin' ? '⚡ Admin' : '💡 Submitter';
+
+    // Topbar
+    $('topbar-avatar').textContent = letter;
+    if (user.avatar_url) {
+        $('topbar-avatar').innerHTML = `<img src="${user.avatar_url}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
+    }
+    $('topbar-email').textContent = user.email;
+
+    // Dropdown
+    $('dd-email').textContent = user.email;
+    $('dd-role').textContent = user.role === 'admin' ? 'Administrator' : 'Submitter';
+
+    // Sidebar nav visibility
+    if (user.role === 'admin') {
+        $('nav-admin').classList.remove('hidden');
+        $('nav-ideas').classList.add('hidden');
+    } else {
+        $('nav-ideas').classList.remove('hidden');
+        $('nav-admin').classList.add('hidden');
+    }
+}
+
 async function init() {
     if (state.token) {
         try {
             const res = await apiFetch('/api/auth/me');
             if (res.ok) {
-                state.user = await res.json();
-                showNavUser(state.user);
-                if (state.user.role === 'admin') {
-                    activateTab('admin'); loadAllIdeas(); loadAdminStats();
-                } else {
-                    activateTab('submitter'); loadMyIdeas();
-                }
+                const user = await res.json();
+                populateUserUI(user);
+                $('auth-view').classList.add('hidden');
+                $('app-shell').classList.remove('hidden');
+                routeTo(user.role === 'admin' ? 'admin' : 'feed');
                 return;
             }
-        } catch (e) { /* fall through */ }
+        } catch (_) { /* fall through */ }
     }
-    state.token = null; localStorage.removeItem('token');
-    showView('auth');
+    state.token = null;
+    localStorage.removeItem('token');
+    $('auth-view').classList.remove('hidden');
+    $('app-shell').classList.add('hidden');
 }
 
-let isLoginMode = true;
-$('auth-toggle-btn').addEventListener('click', () => {
-    isLoginMode = !isLoginMode;
-    $('login-form').classList.toggle('hidden', !isLoginMode);
-    $('register-form').classList.toggle('hidden', isLoginMode);
-    $('auth-heading').textContent = isLoginMode ? 'Sign In' : 'Create Account';
-    $('auth-subheading').textContent = isLoginMode ? 'Access your innovation portal' : 'Join the InnovatEPAM community';
-    $('auth-toggle-btn').textContent = isLoginMode ? "Don't have an account? Register" : 'Already have an account? Sign In';
-});
-
-$('login-form').addEventListener('submit', async (e) => {
+// Login
+$('login-form').addEventListener('submit', async e => {
     e.preventDefault();
     const body = new URLSearchParams({ username: $('login-email').value, password: $('login-password').value });
     const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
@@ -153,94 +233,94 @@ $('login-form').addEventListener('submit', async (e) => {
         state.token = (await res.json()).access_token;
         localStorage.setItem('token', state.token);
         init();
-    } else { showToast((await res.json()).detail || 'Login failed', 'error'); }
-});
-
-$('register-form').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('reg-email').value, password: $('reg-password').value }) });
-    if (res.ok) { showToast('Account created! Please sign in.'); isLoginMode = false; $('auth-toggle-btn').click(); }
-    else { showToast((await res.json()).detail || 'Registration failed.', 'error'); }
-});
-
-$('logout-btn').addEventListener('click', () => {
-    state.token = null; state.user = null;
-    localStorage.removeItem('token'); hideNavUser(); showView('auth');
-    if (state.submissionsChart) { state.submissionsChart.destroy(); state.submissionsChart = null; }
-});
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-function fmtDate(iso) {
-    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-function fmtDateTime(iso) {
-    return new Date(iso).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-const STATUS_BADGE = {
-    submitted: `<span class="badge badge-submitted">Submitted</span>`,
-    accepted: `<span class="badge badge-accepted">Accepted</span>`,
-    rejected: `<span class="badge badge-rejected">Rejected</span>`,
-};
-
-const TAG_COLORS = ['tag-cyan', 'tag-purple', 'tag-green', 'tag-amber', 'tag-pink'];
-function tagColor(t) {
-    let h = 0; for (let c of t) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
-    return TAG_COLORS[Math.abs(h) % TAG_COLORS.length];
-}
-
-function renderTags(tags) {
-    if (!tags) return '';
-    return tags.split(',').map(t => t.trim()).filter(Boolean)
-        .map(t => `<span class="tag-pill ${tagColor(t)}">${t}</span>`).join('');
-}
-
-function avatarDot(user, size = '2.25rem', fontSize = '0.875rem') {
-    const label = (user?.email || '?')[0].toUpperCase();
-    const accentColor = '#0891b2';
-    if (user?.avatar_url) {
-        return `<div class="avatar-ring" style="width:${size};height:${size};padding:0;overflow:hidden;"><img src="${user.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;" onerror="this.style.display='none';this.insertAdjacentText('afterend','${label}')"></div>`;
+    } else {
+        showToast((await res.json()).detail || 'Login failed', 'error');
     }
-    return `<div class="avatar-ring" style="width:${size};height:${size};font-size:${fontSize};background:${accentColor}">${label}</div>`;
+});
+
+// Register
+$('register-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: $('reg-email').value, password: $('reg-password').value })
+    });
+    if (res.ok) {
+        showToast('Account created! Please sign in.');
+        $('auth-toggle-btn').click();
+    } else {
+        showToast((await res.json()).detail || 'Registration failed.', 'error');
+    }
+});
+
+// Toggle form
+let isLoginMode = true;
+$('auth-toggle-btn').addEventListener('click', () => {
+    isLoginMode = !isLoginMode;
+    $('login-form').style.display = isLoginMode ? 'flex' : 'none';
+    $('register-form').style.display = isLoginMode ? 'none' : 'flex';
+    $('auth-heading').textContent = isLoginMode ? 'Sign In' : 'Create Account';
+    $('auth-subheading').textContent = isLoginMode ? 'Access your innovation portal' : 'Join the InnovatEPAM community';
+    $('auth-toggle-btn').innerHTML = isLoginMode
+        ? "Don't have an account? <span style='text-decoration:underline'>Register</span>"
+        : "Already have an account? <span style='text-decoration:underline'>Sign In</span>";
+});
+
+function logout() {
+    state.token = null; state.user = null;
+    localStorage.removeItem('token');
+    $('auth-view').classList.remove('hidden');
+    $('app-shell').classList.add('hidden');
+    closeDropdown();
+    if (state.chart) { state.chart.destroy(); state.chart = null; }
 }
 
 // ─── Idea Card Builder ────────────────────────────────────────────────────────
 function renderIdeaCard(idea, isAdmin = false) {
     const author = idea.author || {};
-    const namePart = author.email ? author.email.split('@')[0] : 'Unknown';
-    const tagsHtml = renderTags(idea.tags);
+    const displayName = author.email ? author.email.split('@')[0] : 'User';
+    const tagsHtml = renderTagPills(idea.tags);
     const badge = STATUS_BADGE[idea.status] || STATUS_BADGE.submitted;
-    const reviewBtn = isAdmin
-        ? `<button class="btn-ghost text-xs !px-3 !py-1.5 flex-shrink-0" onclick="event.stopPropagation();openReview(${JSON.stringify(idea).replace(/"/g, '&quot;')})">Review</button>`
+    const problemSnippet = idea.problem_statement
+        ? `<p style="font-size:0.75rem;font-style:italic;color:var(--text-muted);margin-top:0.25rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${idea.problem_statement}</p>`
         : '';
 
-    const problemSnippet = idea.problem_statement
-        ? `<p class="text-xs mt-1" style="color:var(--color-text-muted)">${idea.problem_statement.slice(0, 80)}${idea.problem_statement.length > 80 ? '…' : ''}</p>` : '';
+    const reviewBtn = isAdmin
+        ? `<button class="btn-ghost" style="font-size:0.75rem;padding:0.3rem 0.75rem;border-radius:0.5rem;flex-shrink:0"
+                onclick="event.stopPropagation();openReviewDrawer(${JSON.stringify(idea).replace(/"/g, '&quot;')})">Review →</button>`
+        : '';
+
+    const avatarLetter = (author.email || '?')[0].toUpperCase();
 
     return `
-    <div class="idea-card" onclick='openDetail(${JSON.stringify(idea).replace(/'/g, "&#39;")})'>
-        <div class="flex items-center justify-between gap-2">
-            <div class="flex items-center gap-2.5 min-w-0">
-                ${avatarDot(author)}
-                <div class="min-w-0">
-                    <p class="text-xs font-semibold truncate">${namePart}</p>
-                    <p class="text-xs" style="color:var(--color-text-muted)">${fmtDate(idea.created_at)}</p>
+    <div class="idea-card" onclick='openDetailDrawer(${JSON.stringify(idea).replace(/'/g, "&#39;")})'>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.5rem">
+            <div style="display:flex;align-items:center;gap:0.625rem;min-width:0">
+                <div class="avatar" style="flex-shrink:0">
+                    ${author.avatar_url
+            ? `<img src="${author.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${avatarLetter}'">`
+            : avatarLetter}
+                </div>
+                <div style="min-width:0">
+                    <p style="font-size:0.8125rem;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${displayName}</p>
+                    <p style="font-size:0.7rem;color:var(--text-muted)">${fmtDate(idea.created_at)}</p>
                 </div>
             </div>
-            <div class="flex items-center gap-2 flex-shrink-0">
+            <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0">
                 ${badge}
                 ${reviewBtn}
             </div>
         </div>
         <div>
-            <h4 class="font-bold text-base leading-snug">${idea.title}</h4>
+            <h4 style="font-size:1rem;font-weight:800;letter-spacing:-0.02em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${idea.title}</h4>
+            <p style="font-size:0.8125rem;color:var(--text-muted);margin-top:0.3rem;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">${idea.description}</p>
             ${problemSnippet}
-            <p class="text-sm mt-1.5" style="color:var(--color-text-muted)">${idea.description.slice(0, 100)}${idea.description.length > 100 ? '…' : ''}</p>
         </div>
-        ${tagsHtml ? `<div class="flex flex-wrap gap-1.5">${tagsHtml}</div>` : ''}
-        <div class="flex items-center justify-between">
-            <span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background:var(--color-border);color:var(--color-text-muted)">${idea.category}</span>
-            <span class="text-xs" style="color:var(--color-text-muted)">Click to view →</span>
+        ${tagsHtml ? `<div style="display:flex;flex-wrap:wrap;gap:0.375rem">${tagsHtml}</div>` : ''}
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:auto;padding-top:0.25rem">
+            <span style="font-size:0.7rem;padding:0.2rem 0.65rem;border-radius:9999px;border:1px solid var(--border);color:var(--text-muted);font-weight:600">${idea.category}</span>
+            <span style="font-size:0.7rem;color:var(--text-muted);font-weight:600">View timeline →</span>
         </div>
     </div>`;
 }
@@ -248,110 +328,343 @@ function renderIdeaCard(idea, isAdmin = false) {
 function renderFeed(ideas, containerId, isAdmin = false) {
     const el = $(containerId);
     if (!ideas.length) {
-        el.innerHTML = `<div class="card p-10 text-center col-span-full" style="color:var(--color-text-muted)">${isAdmin ? 'No submissions yet.' : 'No ideas yet. Click "Submit New Idea" to get started.'}</div>`;
+        el.innerHTML = `<div class="glass-card" style="padding:3rem 2rem;text-align:center;color:var(--text-muted)">
+            <p style="font-size:2rem;margin-bottom:0.75rem">${isAdmin ? '📭' : '💡'}</p>
+            <p style="font-weight:700;margin-bottom:0.375rem">${isAdmin ? 'No submissions yet' : 'No ideas yet'}</p>
+            <p style="font-size:0.875rem">${isAdmin ? 'Submissions will appear here.' : 'Click "New Idea" to submit your first.'}</p>
+        </div>`;
         return;
     }
     el.innerHTML = ideas.map(i => renderIdeaCard(i, isAdmin)).join('');
 }
 
-// ─── Submitter: My Ideas ──────────────────────────────────────────────────────
+// ─── Feed (Submitter) ─────────────────────────────────────────────────────────
 async function loadMyIdeas() {
+    showSkeletons('idea-feed', 6);
     const res = await apiFetch('/api/ideas');
     if (!res.ok) return;
-    renderFeed(await res.json(), 'idea-feed', false);
+    state.allIdeas = await res.json();
+    applyFilter(state.activeFilter);
 }
 
-// ─── Admin: All Ideas ─────────────────────────────────────────────────────────
+function applyFilter(filter) {
+    state.activeFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(c => {
+        c.classList.toggle('active', c.dataset.filter === filter);
+    });
+    const filtered = filter === 'all'
+        ? state.allIdeas
+        : state.allIdeas.filter(i => i.status === filter || (filter === 'submitted' && i.status === 'submitted'));
+    renderFeed(filtered, 'idea-feed', false);
+}
+
+document.querySelectorAll('.filter-chip').forEach(chip => {
+    chip.addEventListener('click', () => applyFilter(chip.dataset.filter));
+});
+
+// Search
+$('search-input').addEventListener('input', e => {
+    const q = e.target.value.toLowerCase();
+    if (!q) { applyFilter(state.activeFilter); return; }
+    const src = state.user?.role === 'admin' ? state.adminIdeas : state.allIdeas;
+    const containerId = state.user?.role === 'admin' ? 'admin-feed' : 'idea-feed';
+    renderFeed(src.filter(i => i.title.toLowerCase().includes(q) || i.description.toLowerCase().includes(q)), containerId, state.user?.role === 'admin');
+});
+
+// ─── Admin Feed ───────────────────────────────────────────────────────────────
 async function loadAllIdeas() {
+    showSkeletons('admin-feed', 6);
     const res = await apiFetch('/api/admin/ideas');
     if (!res.ok) return;
-    renderFeed(await res.json(), 'admin-feed', true);
+    state.adminIdeas = await res.json();
+    $('admin-count').textContent = `${state.adminIdeas.length} submission${state.adminIdeas.length !== 1 ? 's' : ''}`;
+    renderFeed(state.adminIdeas, 'admin-feed', true);
 }
 
-// ─── Admin Analytics ──────────────────────────────────────────────────────────
+// ─── Admin Stats + Chart ──────────────────────────────────────────────────────
 async function loadAdminStats() {
     const res = await apiFetch('/api/admin/stats');
     if (!res.ok) return;
     const d = await res.json();
+
     $('kpi-total').textContent = d.total;
     $('kpi-accepted').textContent = d.accepted;
-    $('kpi-rejected').textContent = d.rejected;
+    $('kpi-pending').textContent = d.pending ?? (d.total - d.accepted - d.rejected);
     $('kpi-rate').textContent = `${d.acceptance_rate}%`;
 
-    const isDark = document.documentElement.classList.contains('dark');
-    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-    const textColor = isDark ? '#94a3b8' : '#64748b';
+    $('kpi-total-trend').textContent = `${d.total} total`;
+    $('kpi-accepted-trend').textContent = d.accepted > 0 ? `↑ ${Math.round(d.accepted / d.total * 100)}% accepted` : 'No accepted yet';
+    $('kpi-rate-trend').textContent = d.acceptance_rate > 50 ? '↑ Above average' : '';
+    $('kpi-rate-trend').className = `kpi-trend ${d.acceptance_rate > 50 ? 'up' : 'flat'}`;
 
-    if (state.submissionsChart) state.submissionsChart.destroy();
-    state.submissionsChart = new Chart($('submissions-chart'), {
-        type: 'bar',
+    renderSplineChart(d.daily_submissions || []);
+}
+
+function rebuildChart() {
+    const res = apiFetch('/api/admin/stats').then(r => r.ok ? r.json() : null).then(d => {
+        if (d) renderSplineChart(d.daily_submissions || []);
+    });
+}
+
+function renderSplineChart(data) {
+    if (state.chart) { state.chart.destroy(); state.chart = null; }
+    const canvas = $('submissions-chart');
+    const ctx = canvas.getContext('2d');
+    const isDark = !document.body.classList.contains('light');
+
+    const labels = data.length ? data.map(x => x.date) : ['No data'];
+    const values = data.length ? data.map(x => x.count) : [0];
+
+    // Gradient fill
+    const grad = ctx.createLinearGradient(0, 0, 0, 220);
+    grad.addColorStop(0, 'rgba(6,182,212,0.35)');
+    grad.addColorStop(0.5, 'rgba(6,182,212,0.1)');
+    grad.addColorStop(1, 'rgba(6,182,212,0)');
+
+    const gridColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#64748b' : '#94a3b8';
+
+    state.chart = new Chart(ctx, {
+        type: 'line',
         data: {
-            labels: d.daily_submissions.length ? d.daily_submissions.map(x => x.date) : ['No data'],
-            datasets: [{ label: 'Submissions', data: d.daily_submissions.length ? d.daily_submissions.map(x => x.count) : [0], backgroundColor: 'rgba(6,182,212,0.7)', borderColor: 'rgb(6,182,212)', borderWidth: 1.5, borderRadius: 5 }]
+            labels,
+            datasets: [{
+                label: 'Submissions',
+                data: values,
+                borderColor: '#06b6d4',
+                backgroundColor: grad,
+                borderWidth: 2.5,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#06b6d4',
+                pointBorderColor: isDark ? '#0f172a' : '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 7,
+                pointHoverBorderWidth: 2,
+            }]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: isDark ? 'rgba(15,23,42,0.95)' : 'rgba(255,255,255,0.95)',
+                    borderColor: 'rgba(6,182,212,0.4)',
+                    borderWidth: 1,
+                    titleColor: isDark ? '#f1f5f9' : '#0f172a',
+                    bodyColor: '#06b6d4',
+                    titleFont: { weight: '700', family: 'Inter' },
+                    bodyFont: { weight: '600', family: 'Inter' },
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: ctx => ` ${ctx.raw} submission${ctx.raw !== 1 ? 's' : ''}`,
+                    }
+                }
+            },
             scales: {
-                x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } },
-                y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1, font: { size: 11 } }, beginAtZero: true }
+                x: {
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, font: { size: 11, family: 'Inter' } },
+                    border: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: { color: gridColor },
+                    ticks: { color: textColor, stepSize: 1, font: { size: 11, family: 'Inter' } },
+                    border: { display: false }
+                }
             }
         }
     });
 }
 
-// ─── Multi-Step Form ──────────────────────────────────────────────────────────
-const STEPS = ['Details', 'Problem', 'Solution'];
+// ─── Detail Drawer (Timeline) ─────────────────────────────────────────────────
+function openDetailDrawer(idea) {
+    $('dd-title').textContent = idea.title;
+    $('dd-category').textContent = idea.category;
+    $('dd-status').innerHTML = STATUS_BADGE[idea.status] || STATUS_BADGE.submitted;
+    $('dd-tags').innerHTML = renderTagPills(idea.tags);
+    $('dd-timeline').innerHTML = buildTimeline(idea);
+
+    $('detail-drawer').classList.add('open');
+    $('drawer-overlay').classList.add('visible');
+}
+
+function buildTimeline(idea) {
+    const author = idea.author || {};
+    const reviewer = idea.reviewer || null;
+    const aName = author.email?.split('@')[0] || 'Unknown';
+    const rName = reviewer?.email?.split('@')[0] || 'Admin';
+
+    const attach = idea.file_path
+        ? `<a href="/${idea.file_path}" target="_blank"
+              style="display:inline-flex;align-items:center;gap:0.375rem;font-size:0.8125rem;font-weight:600;color:var(--accent);text-decoration:none;margin-top:0.625rem">
+              📎 Download attachment</a>`
+        : '';
+    const problemHtml = idea.problem_statement
+        ? `<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)">
+               <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:0.375rem">Problem</p>
+               <p style="font-size:0.8125rem;line-height:1.6">${idea.problem_statement}</p>
+           </div>` : '';
+    const solutionHtml = idea.solution
+        ? `<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border)">
+               <p style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--text-muted);margin-bottom:0.375rem">Solution</p>
+               <p style="font-size:0.8125rem;line-height:1.6">${idea.solution}</p>
+           </div>` : '';
+
+    let html = `
+    <div class="timeline-item">
+        <div class="timeline-dot dot-submit">✍</div>
+        <div class="timeline-body">
+            <p class="timeline-meta"><strong>${aName}</strong> submitted · ${fmtDateTime(idea.created_at)}</p>
+            <div class="timeline-content">
+                <p style="font-size:0.875rem;line-height:1.65;white-space:pre-wrap">${idea.description}</p>
+                ${problemHtml}${solutionHtml}${attach}
+            </div>
+        </div>
+    </div>`;
+
+    if (idea.status !== 'submitted' && reviewer) {
+        const dotClass = idea.status === 'accepted' ? 'dot-accept' : 'dot-reject';
+        const icon = idea.status === 'accepted' ? '✓' : '✗';
+        const rLetter = (reviewer.email || '?')[0].toUpperCase();
+        html += `
+        <div class="timeline-item" style="margin-top:0.25rem">
+            <div class="timeline-dot ${dotClass}">${icon}</div>
+            <div class="timeline-body">
+                <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem">
+                    <div class="avatar" style="width:1.5rem;height:1.5rem;font-size:0.65rem;flex-shrink:0">
+                        ${reviewer.avatar_url ? `<img src="${reviewer.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${rLetter}'">` : rLetter}
+                    </div>
+                    <p class="timeline-meta" style="margin-bottom:0"><strong>${rName}</strong> ${idea.status} this idea</p>
+                </div>
+                ${idea.admin_comment ? `<div class="timeline-content"><p style="font-size:0.875rem;font-style:italic">"${idea.admin_comment}"</p></div>` : ''}
+            </div>
+        </div>`;
+    } else if (idea.status === 'submitted') {
+        html += `
+        <div class="timeline-item" style="margin-top:0.25rem">
+            <div class="timeline-dot dot-pending" style="opacity:0.6">⏳</div>
+            <div class="timeline-body">
+                <p class="timeline-meta" style="opacity:0.7">Awaiting admin review…</p>
+            </div>
+        </div>`;
+    }
+    return html;
+}
+
+// ─── Review Drawer (Admin) ────────────────────────────────────────────────────
+function openReviewDrawer(idea) {
+    $('rd-title').textContent = idea.title;
+    $('rd-category').textContent = idea.category;
+    $('rd-status').innerHTML = STATUS_BADGE[idea.status] || STATUS_BADGE.submitted;
+    $('rd-tags').innerHTML = idea.tags ? renderTagPills(idea.tags) : '';
+    $('rd-description').textContent = idea.description;
+    $('rd-idea-id').value = idea.id;
+    $('rd-comment').value = idea.admin_comment || '';
+
+    // Author row
+    const author = idea.author || {};
+    const aLetter = (author.email || '?')[0].toUpperCase();
+    $('rd-author-row').innerHTML = `
+        <div class="avatar">${author.avatar_url ? `<img src="${author.avatar_url}" style="width:100%;height:100%;object-fit:cover;border-radius:50%" onerror="this.parentElement.textContent='${aLetter}'">` : aLetter}</div>
+        <div>
+            <p style="font-weight:700;font-size:0.875rem">${author.email || 'Unknown'}</p>
+            <p style="font-size:0.75rem;color:var(--text-muted)">${fmtDate(idea.created_at)}</p>
+        </div>`;
+
+    // Conditional sections
+    const prob = $('rd-problem-row'), sol = $('rd-solution-row'), att = $('rd-attach-row');
+    if (idea.problem_statement) { prob.classList.remove('hidden'); $('rd-problem').textContent = idea.problem_statement; } else prob.classList.add('hidden');
+    if (idea.solution) { sol.classList.remove('hidden'); $('rd-solution').textContent = idea.solution; } else sol.classList.add('hidden');
+    if (idea.file_path) { att.classList.remove('hidden'); $('rd-attach-link').href = `/${idea.file_path}`; } else att.classList.add('hidden');
+
+    $('review-drawer').classList.add('open');
+    $('drawer-overlay').classList.add('visible');
+}
+
+async function submitReview(status) {
+    const id = $('rd-idea-id').value;
+    const comment = $('rd-comment').value.trim();
+    if (!comment) { showToast('Please provide an evaluation comment.', 'error'); return; }
+    const res = await apiFetch(`/api/admin/ideas/${id}/evaluate`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status, admin_comment: comment })
+    });
+    if (res.ok) {
+        showToast(`Idea ${status} successfully!`);
+        closeDrawers();
+        loadAllIdeas();
+        loadAdminStats();
+    } else {
+        showToast((await res.json()).detail || 'Evaluation failed.', 'error');
+    }
+}
+
+function closeDrawers() {
+    $('detail-drawer').classList.remove('open');
+    $('review-drawer').classList.remove('open');
+    $('drawer-overlay').classList.remove('visible');
+}
+
+// ─── Submit Modal (3-Step) ────────────────────────────────────────────────────
+const STEP_LABELS = ['Details & Tags', 'Problem Statement', 'Description & Solution'];
 function goToStep(n) {
     state.currentStep = n;
     [1, 2, 3].forEach(i => {
-        const p = $(`step-${i}`);
-        p.classList.toggle('active', i === n);
+        $(`step-${i}`).classList.toggle('active', i === n);
+        $(`step-${i}`).style.display = i === n ? 'flex' : 'none';
     });
-    $('step-label').textContent = `Step ${n} of 3 — ${STEPS[n - 1]}`;
+    $('step-label').textContent = `Step ${n} of 3 — ${STEP_LABELS[n - 1]}`;
     $('step-frac').textContent = `${n}/3`;
     $('step-progress-fill').style.width = `${Math.round((n / 3) * 100)}%`;
 }
 
-// Tag chip clicks
+function openSubmitModal() {
+    state.selectedTags.clear();
+    document.querySelectorAll('.tag-chip-btn').forEach(b => b.classList.remove('selected'));
+    $('idea-tags-input').value = '';
+    $('submit-idea-form').reset();
+    goToStep(1);
+    $('submit-modal').classList.remove('hidden');
+}
+function closeSubmitModal() { $('submit-modal').classList.add('hidden'); }
+
+$('open-submit-btn')?.addEventListener('click', openSubmitModal);
+
+$('submit-modal').addEventListener('click', e => { if (e.target === $('submit-modal')) closeSubmitModal(); });
+
+// Tag chips
 document.querySelectorAll('.tag-chip-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         const tag = btn.dataset.tag;
         if (state.selectedTags.has(tag)) { state.selectedTags.delete(tag); btn.classList.remove('selected'); }
         else { state.selectedTags.add(tag); btn.classList.add('selected'); }
-        $('idea-tags-display').value = [...state.selectedTags].join(', ');
+        $('idea-tags-input').value = [...state.selectedTags].join(', ');
     });
 });
 
 $('step1-next').addEventListener('click', () => {
-    if (!$('idea-title').value.trim() || !$('idea-category').value) {
-        showToast('Please fill in Title and Category.', 'error'); return;
-    }
+    if (!$('idea-title').value.trim()) { showToast('Please enter a title.', 'error'); return; }
+    if (!$('idea-category').value) { showToast('Please select a category.', 'error'); return; }
     goToStep(2);
 });
 $('step2-back').addEventListener('click', () => goToStep(1));
 $('step2-next').addEventListener('click', () => goToStep(3));
 $('step3-back').addEventListener('click', () => goToStep(2));
 
-// Open / Close
-$('open-submit-form-btn').addEventListener('click', () => {
-    goToStep(1); state.selectedTags.clear();
-    document.querySelectorAll('.tag-chip-btn').forEach(b => b.classList.remove('selected'));
-    $('submit-modal').classList.remove('hidden');
-});
-const closeSubmit = () => $('submit-modal').classList.add('hidden');
-$('close-submit-modal').addEventListener('click', closeSubmit);
-$('submit-modal').addEventListener('click', e => { if (e.target === $('submit-modal')) closeSubmit(); });
-
-// Submit
-$('submit-idea-form').addEventListener('submit', async (e) => {
+$('submit-idea-form').addEventListener('submit', async e => {
     e.preventDefault();
-    const tagsVal = $('idea-tags-display').value.trim() || [...state.selectedTags].join(', ');
+    const tags = $('idea-tags-input').value.trim() || [...state.selectedTags].join(', ');
     const fd = new FormData();
     fd.append('title', $('idea-title').value);
     fd.append('category', $('idea-category').value);
     fd.append('description', $('idea-description').value);
-    if (tagsVal) fd.append('tags', tagsVal);
+    if (tags) fd.append('tags', tags);
     if ($('idea-problem').value.trim()) fd.append('problem_statement', $('idea-problem').value.trim());
     if ($('idea-solution').value.trim()) fd.append('solution', $('idea-solution').value.trim());
     const file = $('idea-attachment').files[0];
@@ -360,137 +673,31 @@ $('submit-idea-form').addEventListener('submit', async (e) => {
     const res = await apiFetch('/api/ideas', { method: 'POST', body: fd });
     if (res.ok) {
         showToast('Idea submitted successfully!');
-        closeSubmit();
-        $('submit-idea-form').reset();
+        closeSubmitModal();
         loadMyIdeas();
-    } else { showToast((await res.json()).detail || 'Submission failed.', 'error'); }
+    } else {
+        showToast((await res.json()).detail || 'Submission failed.', 'error');
+    }
 });
 
-// ─── Timeline Detail Modal ────────────────────────────────────────────────────
-function buildTimeline(idea) {
-    const author = idea.author || {};
-    const reviewer = idea.reviewer || null;
-    const name = author.email ? author.email.split('@')[0] : 'User';
-    const rvName = reviewer?.email?.split('@')[0] || 'Admin';
+// ─── Profile ──────────────────────────────────────────────────────────────────
+async function loadProfile() {
+    const res = await apiFetch('/api/auth/me');
+    if (!res.ok) return;
+    const u = await res.json();
+    state.user = u;
+    populateUserUI(u);
 
-    const attachHtml = idea.file_path
-        ? `<a href="/${idea.file_path}" target="_blank" class="inline-flex items-center gap-1 text-xs font-semibold text-cyan-600 dark:text-cyan-400 hover:underline mt-2">📎 Download attachment</a>`
-        : '';
-
-    const problemHtml = idea.problem_statement
-        ? `<div class="mt-2 pt-2" style="border-top:1px solid var(--color-border)"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color:var(--color-text-muted)">Problem</p><p class="text-sm">${idea.problem_statement}</p></div>` : '';
-
-    const solutionHtml = idea.solution
-        ? `<div class="mt-2 pt-2" style="border-top:1px solid var(--color-border)"><p class="text-xs font-semibold uppercase tracking-wider mb-1" style="color:var(--color-text-muted)">Solution</p><p class="text-sm">${idea.solution}</p></div>` : '';
-
-    let html = `
-    <div class="timeline-item">
-        <div class="timeline-dot timeline-dot-submit">✍</div>
-        <div class="timeline-body">
-            <p class="timeline-meta"><strong>${name}</strong> submitted · ${fmtDateTime(idea.created_at)}</p>
-            <div class="timeline-content">
-                <p class="text-sm leading-relaxed whitespace-pre-wrap">${idea.description}</p>
-                ${problemHtml}${solutionHtml}${attachHtml}
-            </div>
-        </div>
-    </div>`;
-
-    if (idea.status !== 'submitted' && reviewer) {
-        const dotClass = idea.status === 'accepted' ? 'timeline-dot-accept' : 'timeline-dot-reject';
-        const icon = idea.status === 'accepted' ? '✓' : '✗';
-        html += `
-        <div class="timeline-item">
-            <div class="timeline-dot ${dotClass}">${icon}</div>
-            <div class="timeline-body">
-                <div class="flex items-center gap-2 mb-1">
-                    ${avatarDot(reviewer, '1.5rem', '0.6rem')}
-                    <p class="timeline-meta mb-0"><strong>${rvName}</strong> ${idea.status} this idea</p>
-                </div>
-                ${idea.admin_comment ? `<div class="timeline-content"><p class="text-sm italic">"${idea.admin_comment}"</p></div>` : ''}
-            </div>
-        </div>`;
-    } else if (idea.status === 'submitted') {
-        html += `
-        <div class="timeline-item">
-            <div class="timeline-dot timeline-dot-pending">⏳</div>
-            <div class="timeline-body">
-                <p class="timeline-meta">Awaiting review…</p>
-            </div>
-        </div>`;
-    }
-    return html;
-}
-
-function openDetail(idea) {
-    $('detail-title').textContent = idea.title;
-    $('detail-category').textContent = idea.category;
-    $('detail-status-badge').innerHTML = STATUS_BADGE[idea.status] || STATUS_BADGE.submitted;
-    $('detail-tags').innerHTML = renderTags(idea.tags);
-    $('detail-timeline').innerHTML = buildTimeline(idea);
-    $('detail-modal').classList.remove('hidden');
-}
-$('close-detail-modal').addEventListener('click', () => $('detail-modal').classList.add('hidden'));
-$('close-detail-btn').addEventListener('click', () => $('detail-modal').classList.add('hidden'));
-$('detail-modal').addEventListener('click', e => { if (e.target === $('detail-modal')) $('detail-modal').classList.add('hidden'); });
-
-// ─── Admin Review Modal ───────────────────────────────────────────────────────
-function openReview(idea) {
-    $('review-title').textContent = idea.title;
-    $('review-category').textContent = idea.category;
-    $('review-status-badge').innerHTML = STATUS_BADGE[idea.status] || STATUS_BADGE.submitted;
-    $('review-description').textContent = idea.description;
-    $('review-idea-id').value = idea.id;
-    $('review-comment').value = idea.admin_comment || '';
-
-    const prob = $('review-problem-row'), sol = $('review-solution-row'), att = $('review-attach-row');
-    if (idea.problem_statement) { prob.classList.remove('hidden'); $('review-problem').textContent = idea.problem_statement; } else prob.classList.add('hidden');
-    if (idea.solution) { sol.classList.remove('hidden'); $('review-solution').textContent = idea.solution; } else sol.classList.add('hidden');
-    if (idea.file_path) { att.classList.remove('hidden'); $('review-attach-link').href = `/${idea.file_path}`; } else att.classList.add('hidden');
-
-    $('review-modal').classList.remove('hidden');
-}
-const closeReview = () => $('review-modal').classList.add('hidden');
-$('close-review-modal').addEventListener('click', closeReview);
-$('cancel-review-modal').addEventListener('click', closeReview);
-$('review-modal').addEventListener('click', e => { if (e.target === $('review-modal')) closeReview(); });
-
-async function submitReview(status) {
-    const id = $('review-idea-id').value;
-    const comment = $('review-comment').value.trim();
-    if (!comment) { showToast('Please enter a comment.', 'error'); return; }
-    const res = await apiFetch(`/api/admin/ideas/${id}/evaluate`, { method: 'PATCH', body: JSON.stringify({ status, admin_comment: comment }) });
-    if (res.ok) {
-        showToast(`Idea ${status} successfully.`);
-        closeReview(); loadAllIdeas(); loadAdminStats();
-    } else { showToast((await res.json()).detail || 'Evaluation failed.', 'error'); }
-}
-$('accept-btn').addEventListener('click', () => submitReview('accepted'));
-$('reject-btn').addEventListener('click', () => submitReview('rejected'));
-
-// ─── Profile View ─────────────────────────────────────────────────────────────
-async function loadUserProfile() {
-    if (!state.user) return;
-
-    // Re-fetch fresh user data in case profile was just updated
-    const meRes = await apiFetch('/api/auth/me');
-    if (meRes.ok) { state.user = await meRes.json(); showNavUser(state.user); }
-
-    const u = state.user;
-    $('profile-email-display').textContent = u.email;
-    $('profile-bio-display').textContent = u.bio || '';
-
-    // Avatar preview
-    const avEl = $('profile-avatar-preview');
+    // Identity card
+    const letter = u.email[0].toUpperCase();
+    const avEl = $('profile-avatar-lg');
     if (u.avatar_url) {
-        avEl.innerHTML = `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'">`;
+        avEl.innerHTML = `<img src="${u.avatar_url}" alt="" onerror="this.parentElement.textContent='${letter}'" style="width:100%;height:100%;object-fit:cover;border-radius:50%">`;
     } else {
-        avEl.textContent = u.email[0].toUpperCase();
+        avEl.textContent = letter;
     }
-
-    // Role badge
-    const rb = $('profile-role-badge');
-    if (u.role === 'admin') { rb.textContent = 'Admin'; rb.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300'; }
-    else { rb.textContent = 'Submitter'; rb.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300'; }
+    $('profile-name').textContent = u.bio ? u.email.split('@')[0] : u.email.split('@')[0];
+    $('profile-bio').textContent = u.bio || 'No bio yet.';
 
     // Social links
     const sl = $('profile-social-links');
@@ -498,7 +705,13 @@ async function loadUserProfile() {
     if (u.github_link) sl.innerHTML += `<a href="${u.github_link}" target="_blank" class="social-badge">⚙ GitHub</a>`;
     if (u.linkedin_link) sl.innerHTML += `<a href="${u.linkedin_link}" target="_blank" class="social-badge">💼 LinkedIn</a>`;
 
-    // Pre-fill edit form
+    // Role pill
+    const rp = $('profile-role-pill');
+    rp.innerHTML = u.role === 'admin'
+        ? '<span class="badge badge-accepted" style="font-size:0.75rem">Admin</span>'
+        : '<span class="badge badge-submitted" style="font-size:0.75rem">Submitter</span>';
+
+    // Pre-fill form
     $('ep-avatar').value = u.avatar_url || '';
     $('ep-bio').value = u.bio || '';
     $('ep-github').value = u.github_link || '';
@@ -511,13 +724,11 @@ async function loadUserProfile() {
         $('stat-total').textContent = d.total;
         $('stat-accepted').textContent = d.accepted;
         $('stat-rejected').textContent = d.rejected;
-        $('stat-pending').textContent = d.pending;
         $('stat-rate').textContent = `${d.success_rate}%`;
     }
 }
 
-// Edit profile form
-$('edit-profile-form').addEventListener('submit', async (e) => {
+$('edit-profile-form').addEventListener('submit', async e => {
     e.preventDefault();
     const payload = {};
     const av = $('ep-avatar').value.trim(); if (av) payload.avatar_url = av;
@@ -527,22 +738,24 @@ $('edit-profile-form').addEventListener('submit', async (e) => {
 
     const res = await apiFetch('/api/users/me/profile', { method: 'PUT', body: JSON.stringify(payload) });
     if (res.ok) {
-        state.user = await res.json();
-        showNavUser(state.user);
         showToast('Profile updated!');
-        loadUserProfile();
-    } else { showToast((await res.json()).detail || 'Update failed.', 'error'); }
+        await loadProfile();
+    } else {
+        showToast((await res.json()).detail || 'Update failed.', 'error');
+    }
 });
 
-// Change password form
-$('change-password-form').addEventListener('submit', async (e) => {
+$('change-password-form').addEventListener('submit', async e => {
     e.preventDefault();
     const current = $('cp-current').value;
     const newPw = $('cp-new').value;
     const confirm = $('cp-confirm').value;
     if (newPw !== confirm) { showToast('New passwords do not match.', 'error'); return; }
-    const res = await apiFetch('/api/users/me/password', { method: 'PUT', body: JSON.stringify({ current_password: current, new_password: newPw }) });
-    if (res.ok) { showToast('Password updated successfully!'); $('change-password-form').reset(); }
+    const res = await apiFetch('/api/users/me/password', {
+        method: 'PUT',
+        body: JSON.stringify({ current_password: current, new_password: newPw })
+    });
+    if (res.ok) { showToast('Password updated!'); $('change-password-form').reset(); }
     else { showToast((await res.json()).detail || 'Password change failed.', 'error'); }
 });
 
