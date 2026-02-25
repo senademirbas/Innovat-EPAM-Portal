@@ -16,7 +16,15 @@ class Idea(Base):
     status = Column(String, default="submitted")
     admin_comment = Column(Text, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    
+
+    # Rich content (Phase 2)
+    tags = Column(String, nullable=True)               # JSON-encoded list, e.g. '["AI","LLM"]'
+    problem_statement = Column(Text, nullable=True)
+    solution = Column(Text, nullable=True)
+
+    # Relationships
     user_id = Column(String, ForeignKey("users.id"), nullable=False)
-    
-    owner = relationship("User", back_populates="ideas")
+    reviewed_by_id = Column(String, ForeignKey("users.id"), nullable=True)
+
+    owner = relationship("User", back_populates="ideas", foreign_keys=[user_id])
+    reviewer = relationship("User", foreign_keys=[reviewed_by_id])
