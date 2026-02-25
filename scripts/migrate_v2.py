@@ -16,6 +16,7 @@ MIGRATIONS = [
     ("users", "bio",                "TEXT"),
     ("users", "github_link",        "TEXT"),
     ("users", "linkedin_link",      "TEXT"),
+    ("users", "studio_name",        "TEXT"),
     # Idea rich content fields
     ("ideas", "tags",               "TEXT"),
     ("ideas", "problem_statement",  "TEXT"),

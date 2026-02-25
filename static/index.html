@@ -94,7 +94,7 @@
     <!-- ═══════════════════════════════════════════════
      APP SHELL  (shown when logged in)
 ═══════════════════════════════════════════════ -->
-    <div id="app-shell" class="hidden">
+    <div id="app-shell" class="hidden" style="display:flex;flex-direction:row;">
 
         <!-- ── LEFT SIDEBAR ─────────────────────────── -->
         <aside id="sidebar">
@@ -112,7 +112,7 @@
 
             <!-- Navigation -->
             <nav class="sidebar-nav">
-                <span class="nav-section-label">Workspace</span>
+                <span class="nav-section-label">Main</span>
 
                 <button class="nav-item active" id="nav-ideas" onclick="routeTo('feed')">
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -128,6 +128,22 @@
                             d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                     </svg>
                     <span>Dashboard</span>
+                </button>
+
+                <button class="nav-item" id="nav-workspace" onclick="routeTo('workspace')">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+                    </svg>
+                    <span>Workspace</span>
+                </button>
+
+                <button class="nav-item hidden" id="nav-users" onclick="routeTo('users')">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                    <span>Users</span>
                 </button>
 
                 <button class="nav-item" id="nav-profile" onclick="routeTo('profile')">
@@ -185,14 +201,37 @@
                 </button>
 
                 <!-- Notification bell -->
-                <button class="btn-icon" title="Notifications" style="position:relative">
-                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                            d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                    </svg>
-                    <span id="notif-badge" class="hidden"
-                        style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 6px var(--accent)"></span>
-                </button>
+                <div style="position:relative">
+                    <button class="btn-icon" id="notif-btn" onclick="toggleNotifPanel()" title="Notifications"
+                        style="position:relative">
+                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span id="notif-badge"
+                            style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 6px var(--accent)"></span>
+                    </button>
+                    <!-- Notification dropdown panel -->
+                    <div id="notif-panel" class="hidden" style="position:absolute;right:0;top:calc(100% + 0.625rem);width:22rem;z-index:200;
+                        background:var(--bg-surface);border:1px solid var(--border);border-radius:1rem;
+                        backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);
+                        box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden">
+                        <div
+                            style="padding:1rem 1.25rem 0.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+                            <p style="font-weight:800;font-size:0.9375rem">Notifications</p>
+                            <span id="notif-count"
+                                style="font-size:0.7rem;padding:0.15rem 0.6rem;border-radius:9999px;background:var(--accent);color:#fff;font-weight:700">3</span>
+                        </div>
+                        <div id="notif-list" style="max-height:19rem;overflow-y:auto;padding:0.5rem 0"></div>
+                        <div style="padding:0.625rem 1.25rem;border-top:1px solid var(--border);text-align:center">
+                            <button onclick="clearNotifs()"
+                                style="font-size:0.75rem;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">Mark
+                                all as read</button>
+                        </div>
+                    </div>
+                </div>
+
 
                 <!-- Avatar dropdown -->
                 <div style="position:relative">
@@ -253,8 +292,7 @@
                     </button>
                 </div>
 
-                <!-- Filter chips -->
-                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem">
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
                     <button class="filter-chip active" data-filter="all">All</button>
                     <button class="filter-chip" data-filter="submitted">Pending</button>
                     <button class="filter-chip" data-filter="accepted">Accepted</button>
@@ -389,7 +427,8 @@
                                 <textarea id="ep-bio" class="input-field" rows="2" maxlength="200"
                                     placeholder="A short description about yourself…"></textarea>
                             </div>
-                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem">
+                            <div
+                                style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
                                 <div>
                                     <label
                                         style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">GitHub</label>
@@ -440,7 +479,86 @@
                 </div>
             </section>
 
+            <!-- WORKSPACE VIEW -->
+            <section id="workspace-view" class="hidden">
+                <div style="margin-bottom:1.5rem">
+                    <h2 style="margin-bottom:0.25rem">My Workspace</h2>
+                    <p style="color:var(--text-muted);font-size:0.875rem">Personal tasks and schedule at a glance.</p>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
+                    <!-- Todo Checklist -->
+                    <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
+                        <div style="display:flex;align-items:center;justify-content:space-between">
+                            <h4 style="font-size:1rem;font-weight:800">My Tasks</h4>
+                            <span id="todo-count"
+                                style="font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:9999px;background:var(--bg-elevated);color:var(--text-muted);font-weight:700">0
+                                tasks</span>
+                        </div>
+                        <!-- Add todo input -->
+                        <div style="display:flex;gap:0.5rem">
+                            <input id="todo-input" type="text" class="input-field" placeholder="Add a task…"
+                                style="flex:1" onkeydown="if(event.key==='Enter')addTodo()">
+                            <button onclick="addTodo()" class="btn-primary"
+                                style="padding:0.5rem 1rem;border-radius:0.625rem;flex-shrink:0">Add</button>
+                        </div>
+                        <!-- Todo list -->
+                        <div id="todo-list"
+                            style="display:flex;flex-direction:column;gap:0.5rem;max-height:24rem;overflow-y:auto">
+                        </div>
+                    </div>
+
+                    <!-- Mini Calendar -->
+                    <div class="glass-card" style="padding:1.75rem">
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                            <button onclick="calPrev()" class="btn-icon" style="font-size:1rem">&#8249;</button>
+                            <h4 id="cal-title" style="font-size:0.9375rem;font-weight:800"></h4>
+                            <button onclick="calNext()" class="btn-icon" style="font-size:1rem">&#8250;</button>
+                        </div>
+                        <div id="mini-calendar" class="calendar-grid"></div>
+                        <div
+                            style="margin-top:1rem;display:flex;align-items:center;gap:1rem;font-size:0.7rem;color:var(--text-muted);font-weight:600">
+                            <span><span
+                                    style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:middle"></span>Idea</span>
+                            <span><span
+                                    style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;margin-right:4px;vertical-align:middle"></span>Event</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- USERS VIEW (Admin Only) -->
+            <section id="users-view" class="hidden">
+                <div
+                    style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+                    <div>
+                        <h2 style="margin-bottom:0.25rem">User Management</h2>
+                        <p style="color:var(--text-muted);font-size:0.875rem">View, manage and promote registered users.
+                        </p>
+                    </div>
+                    <span id="users-count" style="font-size:0.8125rem;color:var(--text-muted);font-weight:600"></span>
+                </div>
+                <div class="glass-card" style="padding:0;overflow:hidden">
+                    <div style="overflow-x:auto">
+                        <table class="user-table" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Role</th>
+                                    <th>Total</th>
+                                    <th>Accepted</th>
+                                    <th>Rate</th>
+                                    <th>Activity</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-tbody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </main>
+
     </div>
 
     <!-- ═══════════════════════════════════════════════
@@ -689,6 +807,46 @@
     </div>
 
     <script src="app.js"></script>
+    <!-- Event Modal (Calendar) -->
+    <div id="event-modal" class="drawer" style="width:min(400px, 100vw)">
+        <div class="drawer-header">
+            <h3>Add Calendar Event</h3>
+            <button class="btn-icon" onclick="closeEventModal()">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div class="drawer-body">
+            <div>
+                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Title</label>
+                <input id="event-title" type="text" class="input-field" placeholder="e.g. Design Sync">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Date</label>
+                <input id="event-date" type="date" class="input-field">
+            </div>
+            <div>
+                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Color</label>
+                <div style="display:flex;gap:0.5rem">
+                    <input type="radio" name="event-color" value="#06b6d4" checked id="c1">
+                    <label for="c1"
+                        style="width:20px;height:20px;border-radius:50%;background:#06b6d4;cursor:pointer"></label>
+                    <input type="radio" name="event-color" value="#a78bfa" id="c2">
+                    <label for="c2"
+                        style="width:20px;height:20px;border-radius:50%;background:#a78bfa;cursor:pointer"></label>
+                    <input type="radio" name="event-color" value="#f59e0b" id="c3">
+                    <label for="c3"
+                        style="width:20px;height:20px;border-radius:50%;background:#f59e0b;cursor:pointer"></label>
+                </div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <div class="actions">
+                <button class="btn-primary" onclick="saveCalendarEvent()" style="flex:1">Save Event</button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

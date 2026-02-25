@@ -17,6 +17,7 @@ class PublicProfile(BaseModel):
     bio: Optional[str] = None
     github_link: Optional[str] = None
     linkedin_link: Optional[str] = None
+    studio_name: Optional[str] = None
 
 class User(UserBase):
     model_config = ConfigDict(from_attributes=True)
@@ -28,14 +29,32 @@ class User(UserBase):
     bio: Optional[str] = None
     github_link: Optional[str] = None
     linkedin_link: Optional[str] = None
+    studio_name: Optional[str] = None
 
 class UserProfile(BaseModel):
-    """Writable profile fields for PUT /users/me/profile."""
+    """Writable profile fields."""
     avatar_url: Optional[str] = None
     bio: Optional[str] = None
     github_link: Optional[str] = None
     linkedin_link: Optional[str] = None
+    studio_name: Optional[str] = None
 
 class PasswordChange(BaseModel):
     current_password: str
     new_password: str = Field(..., min_length=8)
+
+class UserAdminView(BaseModel):
+    """Admin view: user stats for the user management table."""
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    email: str
+    role: str
+    is_active: bool
+    total: int = 0
+    accepted: int = 0
+    rejected: int = 0
+    success_rate: float = 0.0
+
+class RoleUpdate(BaseModel):
+    role: str  # "admin" or "submitter"

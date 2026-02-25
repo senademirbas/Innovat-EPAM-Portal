@@ -18,5 +18,6 @@ class User(Base):
     bio = Column(Text, nullable=True)
     github_link = Column(String, nullable=True)
     linkedin_link = Column(String, nullable=True)
+    studio_name = Column(String, nullable=True)
 
     ideas = relationship("Idea", back_populates="owner", foreign_keys="Idea.user_id")

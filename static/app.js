@@ -114,7 +114,7 @@ document.addEventListener('click', e => {
 
 // ─── View Router ──────────────────────────────────────────────────────────────
 function routeTo(view) {
-    ['feed', 'admin', 'profile'].forEach(v => {
+    ['feed', 'admin', 'profile', 'workspace', 'users'].forEach(v => {
         const el = $(`${v}-view`);
         if (el) el.classList.add('hidden');
     });
@@ -123,7 +123,7 @@ function routeTo(view) {
 
     // Update sidebar active state
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
-    const navMap = { feed: 'nav-ideas', admin: 'nav-admin', profile: 'nav-profile' };
+    const navMap = { feed: 'nav-ideas', admin: 'nav-admin', profile: 'nav-profile', workspace: 'nav-workspace', users: 'nav-users' };
     const activeNav = $(navMap[view]);
     if (activeNav) activeNav.classList.add('active');
 
@@ -134,6 +134,8 @@ function routeTo(view) {
     if (view === 'feed') loadMyIdeas();
     if (view === 'admin') { loadAllIdeas(); loadAdminStats(); }
     if (view === 'profile') loadProfile();
+    if (view === 'workspace') loadWorkspace();
+    if (view === 'users') loadUsersView();
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -198,6 +200,8 @@ function populateUserUI(user) {
     if (user.role === 'admin') {
         $('nav-admin').classList.remove('hidden');
         $('nav-ideas').classList.add('hidden');
+        const nu = $('nav-users');
+        if (nu) nu.classList.remove('hidden');
     } else {
         $('nav-ideas').classList.remove('hidden');
         $('nav-admin').classList.add('hidden');
@@ -608,6 +612,7 @@ async function submitReview(status) {
 function closeDrawers() {
     $('detail-drawer').classList.remove('open');
     $('review-drawer').classList.remove('open');
+    if ($('event-modal')) $('event-modal').classList.remove('open');
     $('drawer-overlay').classList.remove('visible');
 }
 
@@ -759,5 +764,320 @@ $('change-password-form').addEventListener('submit', async e => {
     else { showToast((await res.json()).detail || 'Password change failed.', 'error'); }
 });
 
+// ─── Notification Bell ────────────────────────────────────────────────────────
+const SEED_NOTIFS = [
+    { icon: '✅', text: 'Your idea was accepted by the admin!', time: '2 hours ago', unread: true },
+    { icon: '💡', text: 'You submitted a new idea — awaiting review.', time: 'Yesterday', unread: true },
+    { icon: '👋', text: 'Welcome to InnovatEPAM Portal!', time: '2 days ago', unread: false },
+];
+let _notifsRead = false;
+
+function renderNotifPanel() {
+    $('notif-list').innerHTML = SEED_NOTIFS.map(n => `
+        <div class="notif-item ${n.unread && !_notifsRead ? 'notif-unread' : ''}">
+            <div class="notif-icon">${n.icon}</div>
+            <div style="flex:1;min-width:0">
+                <p class="notif-text">${n.text}</p>
+                <p class="notif-time">${n.time}</p>
+            </div>
+            ${n.unread && !_notifsRead ? '<div class="notif-dot"></div>' : ''}
+        </div>`).join('');
+}
+
+function toggleNotifPanel() {
+    const panel = $('notif-panel');
+    const isHidden = panel.classList.contains('hidden');
+    panel.classList.toggle('hidden');
+    if (isHidden) renderNotifPanel();
+}
+
+function clearNotifs() {
+    _notifsRead = true;
+    $('notif-badge').style.opacity = '0';
+    $('notif-count').textContent = '0';
+    renderNotifPanel();
+}
+
+document.addEventListener('click', e => {
+    if (!e.target.closest('#notif-btn') && !$('notif-panel').classList.contains('hidden')) {
+        $('notif-panel').classList.add('hidden');
+    }
+});
+
+// ─── Extended routeTo ─────────────────────────────────────────────────────────
+// Patch routeTo to support workspace and users views
+function routeTo(view) {
+    // Hide all views including new ones
+    ['feed', 'admin', 'profile', 'workspace', 'users'].forEach(v => {
+        const el = $(`${v}-view`);
+        if (el) el.classList.add('hidden');
+    });
+
+    const target = $(`${view}-view`);
+    if (target) target.classList.remove('hidden');
+
+    // Update sidebar active state
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navMap = { feed: 'nav-ideas', admin: 'nav-admin', profile: 'nav-profile', workspace: 'nav-workspace', users: 'nav-users' };
+    const activeNav = $(navMap[view]);
+    if (activeNav) activeNav.classList.add('active');
+
+    closeSidebar();
+
+    if (view === 'feed') loadMyIdeas();
+    if (view === 'admin') { loadAllIdeas(); loadAdminStats(); }
+    if (view === 'profile') loadProfile();
+    if (view === 'workspace') loadWorkspace();
+    if (view === 'users') loadUsersView();
+}
+
+
+// ─── Workspace: Todos ────────────────────────────────────────────────────────
+let _todos = [];
+let _events = [];
+let _calYear, _calMonth;
+
+async function loadWorkspace() {
+    const today = new Date();
+    if (!_calYear) { _calYear = today.getFullYear(); _calMonth = today.getMonth(); }
+
+    const [tRes, eRes] = await Promise.all([
+        apiFetch('/api/todos'),
+        apiFetch('/api/events')
+    ]);
+    if (tRes.ok) _todos = await tRes.json();
+    if (eRes.ok) _events = await eRes.json();
+
+    renderTodoList();
+    // Load idea dates from cached ideas
+    const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
+    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates);
+}
+
+function renderTodoList() {
+    const el = $('todo-list');
+    $('todo-count').textContent = `${_todos.length} task${_todos.length !== 1 ? 's' : ''}`;
+    if (!_todos.length) {
+        el.innerHTML = `<p style="font-size:0.8125rem;color:var(--text-muted);text-align:center;padding:1.5rem 0">No tasks yet. Add one above!</p>`;
+        return;
+    }
+    el.innerHTML = _todos.map(t => `
+        <div class="todo-item ${t.done ? 'done' : ''}">
+            <div class="todo-checkbox" onclick="toggleTodo('${t.id}', ${!t.done})">
+                ${t.done ? `<svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
+            </div>
+            <span class="todo-text">${t.text}</span>
+            <button class="todo-delete" onclick="deleteTodo('${t.id}')">✕</button>
+        </div>`).join('');
+}
+
+async function addTodo() {
+    const input = $('todo-input');
+    const text = input.value.trim();
+    if (!text) return;
+    const res = await apiFetch('/api/todos', { method: 'POST', body: JSON.stringify({ text }) });
+    if (res.ok) {
+        input.value = '';
+        _todos.push(await res.json());
+        renderTodoList();
+    } else { showToast('Failed to add task.', 'error'); }
+}
+
+async function toggleTodo(id, done) {
+    const res = await apiFetch(`/api/todos/${id}`, { method: 'PATCH', body: JSON.stringify({ done }) });
+    if (res.ok) {
+        const updated = await res.json();
+        _todos = _todos.map(t => t.id === id ? updated : t);
+        renderTodoList();
+    }
+}
+
+async function deleteTodo(id) {
+    const res = await apiFetch(`/api/todos/${id}`, { method: 'DELETE' });
+    if (res.ok || res.status === 204) {
+        _todos = _todos.filter(t => t.id !== id);
+        renderTodoList();
+        showToast('Task deleted.');
+    }
+}
+
+// ─── Workspace: Mini Calendar ─────────────────────────────────────────────────
+const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const DAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+function calPrev() {
+    _calMonth--;
+    if (_calMonth < 0) { _calMonth = 11; _calYear--; }
+    const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
+    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates);
+}
+function calNext() {
+    _calMonth++;
+    if (_calMonth > 11) { _calMonth = 0; _calYear++; }
+    const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
+    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates);
+}
+
+function renderMiniCalendar(year, month, events, ideaDates) {
+    const el = $('mini-calendar');
+    const titleEl = $('cal-title');
+    titleEl.textContent = `${MONTH_NAMES[month]} ${year}`;
+
+    const today = new Date();
+    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+    const eventDateSet = new Set(events.map(e => e.date));
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    let html = DAY_LABELS.map(d => `<div class="cal-day-header">${d}</div>`).join('');
+
+    // empty cells before first day
+    for (let i = 0; i < firstDay; i++) html += `<div class="cal-day cal-empty"></div>`;
+
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = dateStr === todayStr;
+        const hasIdea = ideaDates?.has(dateStr);
+        const hasEvent = eventDateSet.has(dateStr);
+        const dots = [
+            hasIdea ? '<span class="cal-dot cal-dot-idea"></span>' : '',
+            hasEvent ? '<span class="cal-dot cal-dot-event"></span>' : ''
+        ].filter(Boolean).join('');
+
+        html += `<div class="cal-day ${isToday ? 'cal-today' : ''}" onclick="showAddEventForm('${dateStr}')">
+            ${d}
+            ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
+        </div>`;
+    }
+
+    el.innerHTML = html;
+}
+
+function showAddEventForm(dateStr) {
+    if (!$('event-modal')) return;
+    $('event-date').value = dateStr;
+    $('event-title').value = '';
+    $('event-modal').classList.add('open');
+    $('drawer-overlay').classList.add('visible');
+}
+
+function closeEventModal() {
+    $('event-modal').classList.remove('open');
+    $('drawer-overlay').classList.remove('visible');
+}
+
+async function saveCalendarEvent() {
+    const title = $('event-title').value.trim();
+    const date = $('event-date').value;
+    const color = document.querySelector('input[name="event-color"]:checked')?.value || '#06b6d4';
+
+    if (!title || !date) {
+        showToast('Please enter both title and date.', 'error');
+        return;
+    }
+
+    const res = await apiFetch('/api/events', {
+        method: 'POST',
+        body: JSON.stringify({ title, date, color })
+    });
+
+    if (res.ok) {
+        showToast('Event saved!');
+        closeEventModal();
+        const saved = await res.json();
+        _events.push(saved);
+        const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
+        renderMiniCalendar(_calYear, _calMonth, _events, ideaDates);
+    } else {
+        showToast('Failed to save event.', 'error');
+    }
+}
+
+// ─── Users Management View (Admin) ────────────────────────────────────────────
+async function loadUsersView() {
+    $('users-tbody').innerHTML = '';
+    const res = await apiFetch('/api/admin/users');
+    if (!res.ok) { showToast('Failed to load users.', 'error'); return; }
+    const users = await res.json();
+    $('users-count').textContent = `${users.length} registered user${users.length !== 1 ? 's' : ''}`;
+    $('users-tbody').innerHTML = users.map(u => renderUserRow(u)).join('');
+
+    // Render sparklines after DOM is updated
+    users.forEach((u, idx) => {
+        const canvas = document.getElementById(`spark-${idx}`);
+        if (canvas) renderSparkline(canvas, [u.total, u.accepted, u.rejected]);
+    });
+}
+
+function renderUserRow(user, idx) {
+    const letter = user.email[0].toUpperCase();
+    const roleBadge = user.role === 'admin'
+        ? `<span class="role-badge-admin">Admin</span>`
+        : `<span class="role-badge-submitter">Submitter</span>`;
+    const toggleLabel = user.role === 'admin' ? 'Demote' : 'Promote';
+
+    return `<tr>
+        <td style="display:flex;align-items:center;gap:0.625rem">
+            <div class="avatar" style="width:2rem;height:2rem;font-size:0.75rem;flex-shrink:0">${letter}</div>
+            <div>
+                <p style="font-weight:700;font-size:0.8125rem">${user.email}</p>
+                <p style="font-size:0.7rem;color:var(--text-muted)">${user.is_active ? 'Active' : 'Inactive'}</p>
+            </div>
+        </td>
+        <td>${roleBadge}</td>
+        <td style="font-weight:700">${user.total}</td>
+        <td style="color:#22c55e;font-weight:700">${user.accepted}</td>
+        <td style="color:var(--accent);font-weight:700">${user.success_rate}%</td>
+        <td><canvas id="spark-${idx}" class="sparkline-cell"></canvas></td>
+        <td>
+            <button class="role-toggle-btn" onclick="toggleUserRole('${user.id}', '${user.role}')">${toggleLabel}</button>
+        </td>
+    </tr>`;
+}
+
+function renderSparkline(canvas, data) {
+    // data = [total, accepted, rejected]
+    const ctx = canvas.getContext('2d');
+    const isDark = !document.body.classList.contains('light');
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Total', 'OK', 'No'],
+            datasets: [{
+                data,
+                backgroundColor: ['rgba(6,182,212,0.4)', 'rgba(34,197,94,0.5)', 'rgba(239,68,68,0.4)'],
+                borderColor: ['#06b6d4', '#22c55e', '#ef4444'],
+                borderWidth: 1,
+                borderRadius: 2,
+            }]
+        },
+        options: {
+            responsive: false, animation: false,
+            plugins: { legend: { display: false }, tooltip: { enabled: false } },
+            scales: {
+                x: { display: false },
+                y: { display: false, beginAtZero: true }
+            }
+        }
+    });
+}
+
+async function toggleUserRole(userId, currentRole) {
+    const newRole = currentRole === 'admin' ? 'submitter' : 'admin';
+    const label = newRole === 'admin' ? 'promoted to Admin' : 'demoted to Submitter';
+    const res = await apiFetch(`/api/admin/users/${userId}/role`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: newRole })
+    });
+    if (res.ok) {
+        showToast(`User ${label}!`);
+        loadUsersView();
+    } else {
+        showToast((await res.json()).detail || 'Role update failed.', 'error');
+    }
+}
+
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 init();
+
