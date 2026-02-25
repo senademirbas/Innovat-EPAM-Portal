@@ -8,17 +8,14 @@
     <meta name="description"
         content="EPAM's internal platform for submitting and reviewing engineering innovation ideas.">
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = { darkMode: 'class' }
-    </script>
+    <script>tailwind.config = { darkMode: 'class' }</script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-    <!-- ====================================
-     NAVBAR
-==================================== -->
+    <!-- ====================================  NAVBAR  ==================================== -->
     <nav class="navbar">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
             <!-- Logo -->
@@ -33,9 +30,21 @@
                         class="text-cyan-600 dark:text-cyan-400">EPAM</span></span>
             </div>
 
+            <!-- Nav tabs (logged in) -->
+            <div id="nav-tabs" class="hidden items-center gap-1">
+                <!-- Submitter tabs -->
+                <button id="tab-ideas" data-view="submitter"
+                    class="nav-tab px-4 py-2 text-sm font-medium rounded-lg transition-colors">My Ideas</button>
+                <!-- Admin tabs -->
+                <button id="tab-admin" data-view="admin"
+                    class="nav-tab hidden px-4 py-2 text-sm font-medium rounded-lg transition-colors">Dashboard</button>
+                <!-- Common -->
+                <button id="tab-profile" data-view="profile"
+                    class="nav-tab px-4 py-2 text-sm font-medium rounded-lg transition-colors">Profile</button>
+            </div>
+
             <!-- Right side -->
-            <div class="flex items-center gap-4">
-                <!-- Theme toggle -->
+            <div class="flex items-center gap-3">
                 <button id="theme-toggle" title="Toggle theme"
                     class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                     <svg id="icon-sun" class="hidden w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
@@ -46,8 +55,6 @@
                         <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                     </svg>
                 </button>
-
-                <!-- User info (hidden when not logged in) -->
                 <div id="nav-user-info" class="hidden items-center gap-3">
                     <div class="flex flex-col items-end leading-tight">
                         <span id="nav-email" class="text-sm font-semibold"></span>
@@ -59,12 +66,10 @@
         </div>
     </nav>
 
-    <!-- ====================================
-     MAIN CONTENT
-==================================== -->
+    <!-- ====================================  MAIN  ==================================== -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
 
-        <!-- ---- AUTH VIEW ---- -->
+        <!-- ── AUTH VIEW ──────────────────────────────── -->
         <section id="auth-view" class="hidden max-w-sm mx-auto mt-16 animate-in">
             <div class="card p-8">
                 <div class="flex justify-center mb-6">
@@ -79,7 +84,6 @@
                 <p id="auth-subheading" class="text-center text-sm mb-8" style="color: var(--color-text-muted)">Access
                     your innovation portal</p>
 
-                <!-- Login Form -->
                 <form id="login-form" class="space-y-4">
                     <div>
                         <label class="block text-sm font-medium mb-1.5">Email</label>
@@ -92,7 +96,6 @@
                     <button type="submit" class="btn-primary w-full mt-2">Sign In</button>
                 </form>
 
-                <!-- Register Form (hidden) -->
                 <form id="register-form" class="space-y-4 hidden">
                     <div>
                         <label class="block text-sm font-medium mb-1.5">Email</label>
@@ -114,7 +117,7 @@
             </div>
         </section>
 
-        <!-- ---- SUBMITTER DASHBOARD ---- -->
+        <!-- ── SUBMITTER DASHBOARD ────────────────────── -->
         <section id="submitter-view" class="hidden space-y-8 animate-in">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -129,8 +132,6 @@
                     Submit New Idea
                 </button>
             </div>
-
-            <!-- My Ideas Table -->
             <div class="card overflow-hidden">
                 <table class="data-table">
                     <thead>
@@ -143,16 +144,15 @@
                     </thead>
                     <tbody id="my-ideas-tbody">
                         <tr id="my-ideas-empty-row">
-                            <td colspan="4" class="text-center py-10" style="color: var(--color-text-muted)">
-                                No ideas yet. Click "Submit New Idea" to get started.
-                            </td>
+                            <td colspan="4" class="text-center py-10" style="color: var(--color-text-muted)">No ideas
+                                yet. Click "Submit New Idea" to get started.</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
-        <!-- ---- ADMIN DASHBOARD ---- -->
+        <!-- ── ADMIN DASHBOARD ───────────────────────── -->
         <section id="admin-view" class="hidden space-y-8 animate-in">
             <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
@@ -160,22 +160,45 @@
                     <p class="text-sm mt-1" style="color: var(--color-text-muted)">Review and evaluate all submitted
                         ideas.</p>
                 </div>
-                <div class="card px-4 py-3 flex items-center gap-3">
-                    <div
-                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-cyan-100 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400">
-                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
+            </div>
+
+            <!-- Analytics Section -->
+            <div id="admin-analytics" class="space-y-6">
+                <!-- KPI cards -->
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Total</p>
+                        <p id="kpi-total" class="text-3xl font-bold">—</p>
                     </div>
-                    <div>
-                        <p class="text-xs font-medium" style="color: var(--color-text-muted)">Total Ideas</p>
-                        <p id="admin-total-count" class="text-xl font-bold leading-none">—</p>
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Accepted</p>
+                        <p id="kpi-accepted" class="text-3xl font-bold text-green-600 dark:text-green-400">—</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Rejected</p>
+                        <p id="kpi-rejected" class="text-3xl font-bold text-red-500 dark:text-red-400">—</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Accept Rate</p>
+                        <p id="kpi-rate" class="text-3xl font-bold text-cyan-600 dark:text-cyan-400">—</p>
+                    </div>
+                </div>
+
+                <!-- Chart -->
+                <div class="card p-6">
+                    <h3 class="text-sm font-semibold uppercase tracking-wider mb-4"
+                        style="color: var(--color-text-muted)">Submissions per Day</h3>
+                    <div style="height: 220px">
+                        <canvas id="submissions-chart"></canvas>
                     </div>
                 </div>
             </div>
 
-            <!-- All Ideas Table -->
+            <!-- Ideas table -->
             <div class="card overflow-hidden">
                 <table class="data-table">
                     <thead>
@@ -189,20 +212,93 @@
                     </thead>
                     <tbody id="all-ideas-tbody">
                         <tr id="all-ideas-empty-row">
-                            <td colspan="5" class="text-center py-10" style="color: var(--color-text-muted)">
-                                Loading submissions…
-                            </td>
+                            <td colspan="5" class="text-center py-10" style="color: var(--color-text-muted)">Loading
+                                submissions…</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
         </section>
 
+        <!-- ── PROFILE VIEW ──────────────────────────── -->
+        <section id="profile-view" class="hidden space-y-8 animate-in">
+            <div>
+                <h2 class="text-2xl font-bold">My Profile</h2>
+                <p class="text-sm mt-1" style="color: var(--color-text-muted)">Your account information and submission
+                    stats.</p>
+            </div>
+
+            <!-- Profile info card -->
+            <div class="card p-6 flex items-center gap-5">
+                <div class="w-14 h-14 bg-cyan-600 rounded-2xl flex items-center justify-center text-white text-xl font-bold flex-shrink-0"
+                    id="profile-avatar">?</div>
+                <div>
+                    <p id="profile-email" class="text-lg font-bold"></p>
+                    <span id="profile-role-badge"
+                        class="text-xs px-2 py-0.5 rounded-full font-semibold mt-1 inline-block"></span>
+                </div>
+            </div>
+
+            <!-- Stats row -->
+            <div>
+                <h3 class="text-sm font-semibold uppercase tracking-wider mb-4" style="color: var(--color-text-muted)">
+                    Submission Stats</h3>
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-4">
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Total</p>
+                        <p id="stat-total" class="text-3xl font-bold">—</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Accepted</p>
+                        <p id="stat-accepted" class="text-3xl font-bold text-green-600 dark:text-green-400">—</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Rejected</p>
+                        <p id="stat-rejected" class="text-3xl font-bold text-red-500 dark:text-red-400">—</p>
+                    </div>
+                    <div class="card p-4 text-center">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Pending</p>
+                        <p id="stat-pending" class="text-3xl font-bold" style="color: var(--color-text-muted)">—</p>
+                    </div>
+                    <div class="card p-4 text-center col-span-2 sm:col-span-1">
+                        <p class="text-xs font-semibold uppercase tracking-wider mb-1"
+                            style="color: var(--color-text-muted)">Success Rate</p>
+                        <p id="stat-rate" class="text-3xl font-bold text-cyan-600 dark:text-cyan-400">—</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Change password -->
+            <div class="card p-6 max-w-md">
+                <h3 class="text-base font-bold mb-5">Change Password</h3>
+                <form id="change-password-form" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Current Password</label>
+                        <input id="cp-current" type="password" class="input-field" placeholder="Your current password"
+                            required>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">New Password</label>
+                        <input id="cp-new" type="password" class="input-field" placeholder="8+ characters" required
+                            minlength="8">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Confirm New Password</label>
+                        <input id="cp-confirm" type="password" class="input-field" placeholder="Repeat new password"
+                            required>
+                    </div>
+                    <button type="submit" class="btn-primary">Update Password</button>
+                </form>
+            </div>
+        </section>
+
     </main>
 
-    <!-- ====================================
-     MODALS
-==================================== -->
+    <!-- ==================================  MODALS  ================================== -->
 
     <!-- Submit Idea Modal -->
     <div id="submit-modal" class="modal-overlay hidden">
@@ -226,7 +322,7 @@
                     <label class="block text-sm font-medium mb-1.5">Category <span class="text-red-500">*</span></label>
                     <select id="idea-category" class="input-field" required>
                         <option value="" disabled selected>Select a category…</option>
-                        <option value="AI">AI & Machine Learning</option>
+                        <option value="AI">AI &amp; Machine Learning</option>
                         <option value="Cloud">Cloud Native</option>
                         <option value="Productivity">Developer Productivity</option>
                         <option value="Internal">Process Optimization</option>
@@ -242,7 +338,7 @@
                 </div>
                 <div>
                     <label class="block text-sm font-medium mb-1.5">Attachment <span class="text-xs font-normal"
-                            style="color: var(--color-text-muted)">(optional PDF, image, doc)</span></label>
+                            style="color: var(--color-text-muted)">(optional)</span></label>
                     <input id="idea-attachment" type="file" class="input-field py-2">
                 </div>
                 <div class="flex gap-3 pt-2">
@@ -253,7 +349,7 @@
         </div>
     </div>
 
-    <!-- Idea Detail Modal (Submitter: view own idea detail) -->
+    <!-- Idea Detail Modal -->
     <div id="detail-modal" class="modal-overlay hidden">
         <div class="modal-box modal-box-wide">
             <div class="flex items-start justify-between mb-6">
@@ -273,14 +369,12 @@
                     </svg>
                 </button>
             </div>
-
             <div class="space-y-5">
                 <div>
                     <h4 class="text-xs font-semibold uppercase tracking-wider mb-2"
                         style="color: var(--color-text-muted)">Description</h4>
                     <p id="detail-description" class="text-sm leading-relaxed whitespace-pre-wrap"></p>
                 </div>
-
                 <div id="detail-attachment-row" class="hidden">
                     <h4 class="text-xs font-semibold uppercase tracking-wider mb-2"
                         style="color: var(--color-text-muted)">Attachment</h4>
@@ -293,7 +387,6 @@
                         Download File
                     </a>
                 </div>
-
                 <div id="detail-comment-row" class="hidden rounded-lg p-4"
                     style="background: var(--color-bg); border: 1px solid var(--color-border)">
                     <h4 class="text-xs font-semibold uppercase tracking-wider mb-2"
@@ -301,7 +394,6 @@
                     <p id="detail-comment" class="text-sm leading-relaxed italic"></p>
                 </div>
             </div>
-
             <div class="mt-6 pt-4 flex justify-end" style="border-top: 1px solid var(--color-border)">
                 <button id="close-detail-btn" class="btn-ghost">Close</button>
             </div>
@@ -330,8 +422,6 @@
                     </svg>
                 </button>
             </div>
-
-            <!-- Idea details section -->
             <div class="rounded-lg p-4 mb-6" style="background: var(--color-bg); border: 1px solid var(--color-border)">
                 <h4 class="text-xs font-semibold uppercase tracking-wider mb-2" style="color: var(--color-text-muted)">
                     Description</h4>
@@ -348,8 +438,6 @@
                     </a>
                 </div>
             </div>
-
-            <!-- Evaluation form -->
             <form id="review-form" class="space-y-4">
                 <input type="hidden" id="review-idea-id">
                 <div>
@@ -359,23 +447,39 @@
                         placeholder="Provide constructive feedback for the submitter…" required></textarea>
                 </div>
                 <div class="flex gap-3 pt-2">
-                    <button type="submit" name="action" value="accepted" id="accept-btn" class="btn-success flex-1">
-                        ✓ Accept
-                    </button>
-                    <button type="submit" name="action" value="rejected" id="reject-btn" class="btn-danger flex-1">
-                        ✗ Reject
-                    </button>
+                    <button type="button" id="accept-btn" class="btn-success flex-1">✓ Accept</button>
+                    <button type="button" id="reject-btn" class="btn-danger flex-1">✗ Reject</button>
                     <button type="button" id="cancel-review-modal" class="btn-ghost">Cancel</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Toast Notification -->
+    <!-- Toast -->
     <div id="toast" class="toast hidden-toast" role="alert">
         <span id="toast-icon"></span>
         <span id="toast-message"></span>
     </div>
+
+    <style>
+        .nav-tab {
+            color: var(--color-text-muted);
+        }
+
+        .nav-tab:hover {
+            color: var(--color-text);
+            background: var(--color-border);
+        }
+
+        .nav-tab.active {
+            color: #0891b2;
+            font-weight: 600;
+        }
+
+        .dark .nav-tab.active {
+            color: #22d3ee;
+        }
+    </style>
 
     <script src="app.js"></script>
 </body>

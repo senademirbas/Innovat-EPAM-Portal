@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
-from src.app.api import auth, admin, ideas
+from src.app.api import auth, admin, ideas, users
 from src.app.db.session import engine, Base
 import os
 
@@ -16,6 +16,8 @@ app = FastAPI(
 app.include_router(auth.router, prefix="/api")
 app.include_router(admin.router, prefix="/api")
 app.include_router(ideas.router, prefix="/api")
+app.include_router(users.router, prefix="/api")
+
 
 # Mount upload directory
 if not os.path.exists("uploads"):

@@ -1,23 +1,41 @@
 /**
- * InnovatEPAM Portal – app.js (v2)
- * Handles Auth, Theme, View Routing, Ideas, Admin Review.
+ * InnovatEPAM Portal – app.js (v3)
+ * Handles Auth, Theme, Nav Tabs, Ideas, Admin Review, Profile & Analytics.
  */
 
 // ─── State ───────────────────────────────────────────────────────────────────
 const state = {
     token: localStorage.getItem('token'),
     user: null,
+    submissionsChart: null, // Chart.js instance
 };
 
-// ─── DOM refs ─────────────────────────────────────────────────────────────────
+// ─── DOM ref helper ──────────────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 
-// ─── Theme ────────────────────────────────────────────────────────────────────
-function initTheme() {
-    const saved = localStorage.getItem('theme') || 'light';
-    applyTheme(saved);
+// ─── API helper ──────────────────────────────────────────────────────────────
+async function apiFetch(path, options = {}) {
+    const headers = { ...(options.headers || {}) };
+    if (state.token && !(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
+    if (state.token) headers['Authorization'] = `Bearer ${state.token}`;
+    return fetch(path, { ...options, headers });
 }
 
+// ─── Toast ───────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
+    const toast = $('toast');
+    $('toast-icon').textContent = type === 'success' ? '✓' : '✗';
+    $('toast-message').textContent = msg;
+    toast.className = `toast toast-${type}`;
+    setTimeout(() => { toast.className = 'toast hidden-toast'; }, 3500);
+}
+
+// ─── Theme ───────────────────────────────────────────────────────────────────
+function initTheme() {
+    applyTheme(localStorage.getItem('theme') || 'light');
+}
 function applyTheme(theme) {
     if (theme === 'dark') {
         document.documentElement.classList.add('dark');
@@ -30,43 +48,66 @@ function applyTheme(theme) {
     }
     localStorage.setItem('theme', theme);
 }
-
 $('theme-toggle').addEventListener('click', () => {
-    const isDark = document.documentElement.classList.contains('dark');
-    applyTheme(isDark ? 'light' : 'dark');
+    applyTheme(document.documentElement.classList.contains('dark') ? 'light' : 'dark');
 });
 
-// ─── Navbar ───────────────────────────────────────────────────────────────────
+// ─── Navbar ──────────────────────────────────────────────────────────────────
 function showNavUser(user) {
     $('nav-user-info').classList.remove('hidden');
     $('nav-user-info').classList.add('flex');
+    $('nav-tabs').classList.remove('hidden');
+    $('nav-tabs').classList.add('flex');
     $('nav-email').textContent = user.email;
-
     const badge = $('nav-role-badge');
     if (user.role === 'admin') {
         badge.textContent = 'Admin';
         badge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+        $('tab-admin').classList.remove('hidden');
+        $('tab-ideas').classList.add('hidden');
     } else {
         badge.textContent = 'Submitter';
         badge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300';
+        $('tab-admin').classList.add('hidden');
+        $('tab-ideas').classList.remove('hidden');
     }
 }
-
 function hideNavUser() {
     $('nav-user-info').classList.add('hidden');
     $('nav-user-info').classList.remove('flex');
+    $('nav-tabs').classList.add('hidden');
+    $('nav-tabs').classList.remove('flex');
 }
 
-// ─── Views ────────────────────────────────────────────────────────────────────
+// ─── Nav Tab switching ────────────────────────────────────────────────────────
+function activateTab(viewName) {
+    document.querySelectorAll('.nav-tab').forEach(btn => btn.classList.remove('active'));
+    const targetBtn = document.querySelector(`.nav-tab[data-view="${viewName}"]`);
+    if (targetBtn) targetBtn.classList.add('active');
+    showView(viewName);
+}
+
+document.querySelectorAll('.nav-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const view = btn.dataset.view;
+        activateTab(view);
+        if (view === 'profile') loadUserProfile();
+        if (view === 'admin') { loadAllIdeas(); loadAdminStats(); }
+        if (view === 'submitter') loadMyIdeas();
+    });
+});
+
+// ─── View switching ──────────────────────────────────────────────────────────
 function showView(view) {
-    ['auth-view', 'submitter-view', 'admin-view'].forEach(id => $$(id));
-    showEl(view + '-view');
+    ['auth', 'submitter', 'admin', 'profile'].forEach(v => {
+        const el = $(`${v}-view`);
+        if (el) el.classList.add('hidden');
+    });
+    const target = $(`${view}-view`);
+    if (target) target.classList.remove('hidden');
 }
 
-function showEl(id) { const el = $(id); if (el) el.classList.remove('hidden'); }
-function $$(id) { const el = $(id); if (el) el.classList.add('hidden'); }
-
-// ─── Auth ─────────────────────────────────────────────────────────────────────
+// ─── Auth flow ───────────────────────────────────────────────────────────────
 async function init() {
     initTheme();
     if (state.token) {
@@ -77,346 +118,294 @@ async function init() {
                 showNavUser(state.user);
                 if (state.user.role === 'admin') {
                     showView('admin');
+                    activateTab('admin');
                     loadAllIdeas();
+                    loadAdminStats();
                 } else {
                     showView('submitter');
+                    activateTab('submitter');
                     loadMyIdeas();
                 }
                 return;
             }
-        } catch (_) { }
+        } catch (e) { /* fall through */ }
     }
-    logout(false);
+    state.token = null;
+    localStorage.removeItem('token');
+    showView('auth');
 }
 
-// Auth form toggle
+// Login / Register form toggle
 let isLoginMode = true;
 $('auth-toggle-btn').addEventListener('click', () => {
     isLoginMode = !isLoginMode;
     $('login-form').classList.toggle('hidden', !isLoginMode);
     $('register-form').classList.toggle('hidden', isLoginMode);
     $('auth-heading').textContent = isLoginMode ? 'Sign In' : 'Create Account';
-    $('auth-subheading').textContent = isLoginMode ? 'Access your innovation portal' : 'Join the EPAM innovation community';
-    $('auth-toggle-btn').textContent = isLoginMode
-        ? "Don't have an account? Register"
-        : 'Already have an account? Sign in';
+    $('auth-subheading').textContent = isLoginMode ? 'Access your innovation portal' : 'Join the InnovatEPAM community';
+    $('auth-toggle-btn').textContent = isLoginMode ? "Don't have an account? Register" : 'Already have an account? Sign In';
 });
 
 $('login-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const form = new URLSearchParams();
-    form.append('username', $('login-email').value.trim());
-    form.append('password', $('login-password').value);
-
-    const res = await fetch('/api/auth/login', { method: 'POST', body: form });
-    const data = await res.json();
+    const body = new URLSearchParams({ username: $('login-email').value, password: $('login-password').value });
+    const res = await fetch('/api/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body });
     if (res.ok) {
-        state.token = data.access_token;
+        state.token = (await res.json()).access_token;
         localStorage.setItem('token', state.token);
-        toast('Welcome back!', 'success');
-        await init();
+        init();
     } else {
-        toast(data.detail || 'Login failed.', 'error');
+        showToast((await res.json()).detail || 'Login failed', 'error');
     }
 });
 
 $('register-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: $('reg-email').value.trim(), password: $('reg-password').value }),
-    });
-    const data = await res.json();
+    const res = await fetch('/api/auth/register', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: $('reg-email').value, password: $('reg-password').value }) });
     if (res.ok) {
-        toast('Account created! Please sign in.', 'success');
+        showToast('Account created! Please sign in.');
+        isLoginMode = false;
         $('auth-toggle-btn').click();
     } else {
-        toast(data.detail || 'Registration failed.', 'error');
+        showToast((await res.json()).detail || 'Registration failed.', 'error');
     }
 });
 
-$('logout-btn').addEventListener('click', () => logout(true));
-
-function logout(notify_user = true) {
-    state.token = null;
-    state.user = null;
+$('logout-btn').addEventListener('click', () => {
+    state.token = null; state.user = null;
     localStorage.removeItem('token');
     hideNavUser();
     showView('auth');
-    if (notify_user) toast('Logged out.', 'info');
+    if (state.submissionsChart) { state.submissionsChart.destroy(); state.submissionsChart = null; }
+});
+
+// ─── Status badge helper ─────────────────────────────────────────────────────
+function statusBadge(status) {
+    const map = { submitted: 'badge-submitted', accepted: 'badge-accepted', rejected: 'badge-rejected' };
+    return `<span class="badge ${map[status] || 'badge-submitted'}">${status}</span>`;
 }
 
-// ─── API helper ───────────────────────────────────────────────────────────────
-function apiFetch(url, opts = {}) {
-    return fetch(url, {
-        ...opts,
-        headers: {
-            ...(opts.headers || {}),
-            'Authorization': `Bearer ${state.token}`,
-        },
-    });
+function fmtDate(iso) {
+    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
-// ─── Submitter: Load my ideas ─────────────────────────────────────────────────
+// ─── Submitter: My Ideas ──────────────────────────────────────────────────────
 async function loadMyIdeas() {
     const res = await apiFetch('/api/ideas');
-    if (!res.ok) { toast('Failed to load ideas.', 'error'); return; }
+    if (!res.ok) return;
     const ideas = await res.json();
-    renderMyIdeas(ideas);
-}
-
-function renderMyIdeas(ideas) {
     const tbody = $('my-ideas-tbody');
-    const emptyRow = $('my-ideas-empty-row');
-
-    // Remove old data rows
-    tbody.querySelectorAll('tr.data-row').forEach(r => r.remove());
-
     if (!ideas.length) {
-        emptyRow.classList.remove('hidden');
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center py-10" style="color:var(--color-text-muted)">No ideas yet. Click "Submit New Idea" to get started.</td></tr>`;
         return;
     }
-
-    emptyRow.classList.add('hidden');
-    ideas.forEach(idea => {
-        const tr = document.createElement('tr');
-        tr.className = 'data-row';
-        tr.title = 'Click to view details';
-        tr.innerHTML = `
-            <td>
-                <span class="font-semibold hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">${escapeHtml(idea.title)}</span>
-            </td>
-            <td>${escapeHtml(idea.category)}</td>
-            <td>${formatDate(idea.created_at)}</td>
-            <td>${statusBadge(idea.status)}</td>
-        `;
-        tr.addEventListener('click', () => openDetailModal(idea));
-        tbody.appendChild(tr);
-    });
+    tbody.innerHTML = ideas.map(i => `
+        <tr class="cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors" onclick="openDetail(${JSON.stringify(i).replace(/"/g, '&quot;')})">
+            <td class="font-medium">${i.title}</td>
+            <td><span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background:var(--color-border);color:var(--color-text-muted)">${i.category}</span></td>
+            <td class="text-sm" style="color:var(--color-text-muted)">${fmtDate(i.created_at)}</td>
+            <td>${statusBadge(i.status)}</td>
+        </tr>`).join('');
 }
 
-// ─── Submitter: Submit new idea ───────────────────────────────────────────────
-$('open-submit-form-btn').addEventListener('click', () => showModal('submit-modal'));
-$('close-submit-modal').addEventListener('click', () => hideModal('submit-modal'));
-$('cancel-submit-modal').addEventListener('click', () => hideModal('submit-modal'));
+// Submit idea form
+$('open-submit-form-btn').addEventListener('click', () => $('submit-modal').classList.remove('hidden'));
+$('close-submit-modal').addEventListener('click', () => $('submit-modal').classList.add('hidden'));
+$('cancel-submit-modal').addEventListener('click', () => $('submit-modal').classList.add('hidden'));
+$('submit-modal').addEventListener('click', (e) => { if (e.target === $('submit-modal')) $('submit-modal').classList.add('hidden'); });
 
 $('submit-idea-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     const fd = new FormData();
-    fd.append('title', $('idea-title').value.trim());
+    fd.append('title', $('idea-title').value);
     fd.append('category', $('idea-category').value);
-    fd.append('description', $('idea-description').value.trim());
+    fd.append('description', $('idea-description').value);
     const file = $('idea-attachment').files[0];
-    if (file) fd.append('attachment', file);
-
+    if (file) fd.append('file', file);
     const res = await apiFetch('/api/ideas', { method: 'POST', body: fd });
     if (res.ok) {
-        toast('Idea submitted successfully!', 'success');
-        hideModal('submit-modal');
+        showToast('Idea submitted successfully!');
+        $('submit-modal').classList.add('hidden');
         $('submit-idea-form').reset();
         loadMyIdeas();
     } else {
-        const d = await res.json().catch(() => ({}));
-        toast(d.detail || 'Submission failed.', 'error');
+        showToast((await res.json()).detail || 'Submission failed.', 'error');
     }
 });
 
-// ─── Detail Modal (Submitter view) ───────────────────────────────────────────
-function openDetailModal(idea) {
+// ─── Idea Detail Modal (Submitter) ─────────────────────────────────────────
+function openDetail(idea) {
     $('detail-title').textContent = idea.title;
     $('detail-category').textContent = idea.category;
+    $('detail-status-badge').outerHTML = `<span id="detail-status-badge" class="badge">${statusBadge(idea.status)}</span>`;
     $('detail-description').textContent = idea.description;
-    $('detail-status-badge').className = `badge ${statusBadgeClass(idea.status)}`;
-    $('detail-status-badge').textContent = idea.status;
-
-    // Attachment
+    const attachRow = $('detail-attachment-row');
     if (idea.file_path) {
-        $('detail-attachment-row').classList.remove('hidden');
-        $('detail-attachment-link').href = idea.file_path;
-    } else {
-        $('detail-attachment-row').classList.add('hidden');
-    }
-
-    // Admin comment
+        attachRow.classList.remove('hidden');
+        $('detail-attachment-link').href = `/${idea.file_path}`;
+    } else { attachRow.classList.add('hidden'); }
+    const commentRow = $('detail-comment-row');
     if (idea.admin_comment) {
-        $('detail-comment-row').classList.remove('hidden');
+        commentRow.classList.remove('hidden');
         $('detail-comment').textContent = idea.admin_comment;
-    } else {
-        $('detail-comment-row').classList.add('hidden');
-    }
-
-    showModal('detail-modal');
+    } else { commentRow.classList.add('hidden'); }
+    $('detail-modal').classList.remove('hidden');
 }
+$('close-detail-modal').addEventListener('click', () => $('detail-modal').classList.add('hidden'));
+$('close-detail-btn').addEventListener('click', () => $('detail-modal').classList.add('hidden'));
+$('detail-modal').addEventListener('click', (e) => { if (e.target === $('detail-modal')) $('detail-modal').classList.add('hidden'); });
 
-$('close-detail-modal').addEventListener('click', () => hideModal('detail-modal'));
-$('close-detail-btn').addEventListener('click', () => hideModal('detail-modal'));
-
-// ─── Admin: Load all ideas ────────────────────────────────────────────────────
+// ─── Admin: All Ideas ─────────────────────────────────────────────────────────
 async function loadAllIdeas() {
     const res = await apiFetch('/api/admin/ideas');
-    if (!res.ok) { toast('Failed to load ideas.', 'error'); return; }
+    if (!res.ok) return;
     const ideas = await res.json();
-    renderAllIdeas(ideas);
-    $('admin-total-count').textContent = ideas.length;
-}
-
-function renderAllIdeas(ideas) {
     const tbody = $('all-ideas-tbody');
-    const emptyRow = $('all-ideas-empty-row');
-    tbody.querySelectorAll('tr.data-row').forEach(r => r.remove());
-
     if (!ideas.length) {
-        emptyRow.textContent = 'No ideas have been submitted yet.';
-        emptyRow.classList.remove('hidden');
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center py-10" style="color:var(--color-text-muted)">No submissions yet.</td></tr>`;
         return;
     }
-
-    emptyRow.classList.add('hidden');
-    ideas.forEach(idea => {
-        const tr = document.createElement('tr');
-        tr.className = 'data-row';
-        tr.innerHTML = `
-            <td>
-                <div class="font-semibold">${escapeHtml(idea.title)}</div>
-                <div class="text-xs mt-0.5" style="color: var(--color-text-muted)">${escapeHtml(idea.description).substring(0, 80)}…</div>
-            </td>
-            <td>${escapeHtml(idea.category)}</td>
-            <td>${formatDate(idea.created_at)}</td>
-            <td>${statusBadge(idea.status)}</td>
+    tbody.innerHTML = ideas.map(i => `
+        <tr>
+            <td class="font-medium">${i.title}</td>
+            <td><span class="text-xs px-2.5 py-1 rounded-full font-semibold" style="background:var(--color-border);color:var(--color-text-muted)">${i.category}</span></td>
+            <td class="text-sm" style="color:var(--color-text-muted)">${fmtDate(i.created_at)}</td>
+            <td>${statusBadge(i.status)}</td>
             <td class="text-right">
-                <button class="btn-primary !text-xs !px-3 !py-1.5 review-btn">Review</button>
+                <button onclick="openReview(${JSON.stringify(i).replace(/"/g, '&quot;')})" class="btn-ghost text-xs !px-3 !py-1.5">Review</button>
             </td>
-        `;
-        tr.querySelector('.review-btn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            openReviewModal(idea);
-        });
-        tbody.appendChild(tr);
+        </tr>`).join('');
+}
+
+// ─── Admin Analytics ──────────────────────────────────────────────────────────
+async function loadAdminStats() {
+    const res = await apiFetch('/api/admin/stats');
+    if (!res.ok) return;
+    const d = await res.json();
+    $('kpi-total').textContent = d.total;
+    $('kpi-accepted').textContent = d.accepted;
+    $('kpi-rejected').textContent = d.rejected;
+    $('kpi-rate').textContent = `${d.acceptance_rate}%`;
+
+    const labels = d.daily_submissions.map(x => x.date);
+    const counts = d.daily_submissions.map(x => x.count);
+
+    const isDark = document.documentElement.classList.contains('dark');
+    const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const textColor = isDark ? '#94a3b8' : '#64748b';
+
+    if (state.submissionsChart) state.submissionsChart.destroy();
+
+    state.submissionsChart = new Chart($('submissions-chart'), {
+        type: 'bar',
+        data: {
+            labels: labels.length ? labels : ['No data'],
+            datasets: [{
+                label: 'Submissions',
+                data: counts.length ? counts : [0],
+                backgroundColor: 'rgba(6, 182, 212, 0.7)',
+                borderColor: 'rgb(6, 182, 212)',
+                borderWidth: 1.5,
+                borderRadius: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: textColor, font: { size: 11 } } },
+                y: { grid: { color: gridColor }, ticks: { color: textColor, stepSize: 1, font: { size: 11 } }, beginAtZero: true }
+            }
+        }
     });
 }
 
-// ─── Admin Review Modal ───────────────────────────────────────────────────────
-function openReviewModal(idea) {
-    $('review-idea-id').value = idea.id;
+// ─── Review Modal ─────────────────────────────────────────────────────────────
+function openReview(idea) {
     $('review-title').textContent = idea.title;
     $('review-category').textContent = idea.category;
     $('review-description').textContent = idea.description;
-    $('review-status-badge').className = `badge ${statusBadgeClass(idea.status)}`;
-    $('review-status-badge').textContent = idea.status;
+    $('review-idea-id').value = idea.id;
     $('review-comment').value = idea.admin_comment || '';
-
+    const attachRow = $('review-attachment-row');
     if (idea.file_path) {
-        $('review-attachment-row').classList.remove('hidden');
-        $('review-attachment-link').href = idea.file_path;
+        attachRow.classList.remove('hidden');
+        $('review-attachment-link').href = `/${idea.file_path}`;
+    } else { attachRow.classList.add('hidden'); }
+    $('review-modal').classList.remove('hidden');
+}
+$('close-review-modal').addEventListener('click', () => $('review-modal').classList.add('hidden'));
+$('cancel-review-modal').addEventListener('click', () => $('review-modal').classList.add('hidden'));
+$('review-modal').addEventListener('click', (e) => { if (e.target === $('review-modal')) $('review-modal').classList.add('hidden'); });
+
+async function submitReview(status) {
+    const id = $('review-idea-id').value;
+    const comment = $('review-comment').value.trim();
+    if (!comment) { showToast('Please enter a comment before submitting.', 'error'); return; }
+    const res = await apiFetch(`/api/admin/ideas/${id}/evaluate`, { method: 'PATCH', body: JSON.stringify({ status, admin_comment: comment }) });
+    if (res.ok) {
+        showToast(`Idea ${status} successfully.`);
+        $('review-modal').classList.add('hidden');
+        loadAllIdeas();
+        loadAdminStats();
     } else {
-        $('review-attachment-row').classList.add('hidden');
+        showToast((await res.json()).detail || 'Evaluation failed.', 'error');
+    }
+}
+$('accept-btn').addEventListener('click', () => submitReview('accepted'));
+$('reject-btn').addEventListener('click', () => submitReview('rejected'));
+
+// ─── Profile View ─────────────────────────────────────────────────────────────
+async function loadUserProfile() {
+    if (!state.user) return;
+
+    // Identity card
+    $('profile-email').textContent = state.user.email;
+    $('profile-avatar').textContent = state.user.email[0].toUpperCase();
+    const roleBadge = $('profile-role-badge');
+    if (state.user.role === 'admin') {
+        roleBadge.textContent = 'Admin';
+        roleBadge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+    } else {
+        roleBadge.textContent = 'Submitter';
+        roleBadge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300';
     }
 
-    showModal('review-modal');
+    // Stats
+    const res = await apiFetch('/api/users/me/stats');
+    if (res.ok) {
+        const d = await res.json();
+        $('stat-total').textContent = d.total;
+        $('stat-accepted').textContent = d.accepted;
+        $('stat-rejected').textContent = d.rejected;
+        $('stat-pending').textContent = d.pending;
+        $('stat-rate').textContent = `${d.success_rate}%`;
+    }
 }
 
-$('close-review-modal').addEventListener('click', () => hideModal('review-modal'));
-$('cancel-review-modal').addEventListener('click', () => hideModal('review-modal'));
-
-// Accept button
-$('accept-btn').addEventListener('click', async (e) => {
+// ─── Change Password ──────────────────────────────────────────────────────────
+$('change-password-form').addEventListener('submit', async (e) => {
     e.preventDefault();
-    await submitEvaluation('accepted');
-});
+    const current = $('cp-current').value;
+    const newPw = $('cp-new').value;
+    const confirm = $('cp-confirm').value;
 
-// Reject button
-$('reject-btn').addEventListener('click', async (e) => {
-    e.preventDefault();
-    await submitEvaluation('rejected');
-});
-
-async function submitEvaluation(status) {
-    const id = $('review-idea-id').value;
-    const admin_comment = $('review-comment').value.trim();
-
-    if (!admin_comment) {
-        toast('Please provide an admin comment before submitting.', 'error');
-        $('review-comment').focus();
+    if (newPw !== confirm) {
+        showToast('New passwords do not match.', 'error');
         return;
     }
-
-    const res = await apiFetch(`/api/admin/ideas/${id}/evaluate`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status, admin_comment }),
+    const res = await apiFetch('/api/users/me/password', {
+        method: 'PUT',
+        body: JSON.stringify({ current_password: current, new_password: newPw }),
     });
-
     if (res.ok) {
-        toast(`Idea ${status === 'accepted' ? 'accepted' : 'rejected'} successfully.`, 'success');
-        hideModal('review-modal');
-        loadAllIdeas();
+        showToast('Password updated successfully!');
+        $('change-password-form').reset();
     } else {
-        toast('Failed to submit evaluation.', 'error');
+        showToast((await res.json()).detail || 'Password change failed.', 'error');
     }
-}
-
-// ─── Modal helpers ────────────────────────────────────────────────────────────
-function showModal(id) {
-    const el = $(id);
-    el.classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    // Close on backdrop click
-    el.addEventListener('click', (e) => {
-        if (e.target === el) hideModal(id);
-    }, { once: true });
-}
-
-function hideModal(id) {
-    $(id).classList.add('hidden');
-    document.body.style.overflow = '';
-}
-
-// ─── Status Badges ────────────────────────────────────────────────────────────
-function statusBadgeClass(status) {
-    const s = (status || '').toLowerCase();
-    if (s === 'accepted') return 'badge-accepted';
-    if (s === 'rejected') return 'badge-rejected';
-    if (s === 'under-review' || s === 'under review') return 'badge-review';
-    return 'badge-pending';
-}
-
-function statusBadge(status) {
-    const cls = statusBadgeClass(status);
-    return `<span class="badge ${cls}">${escapeHtml(status || 'Pending')}</span>`;
-}
-
-// ─── Utils ────────────────────────────────────────────────────────────────────
-function escapeHtml(str) {
-    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function formatDate(iso) {
-    if (!iso) return '—';
-    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-}
-
-// ─── Toast Notification ───────────────────────────────────────────────────────
-let toastTimer = null;
-function toast(message, type = 'info') {
-    const el = $('toast');
-    const icon = $('toast-icon');
-    const msg = $('toast-message');
-
-    msg.textContent = message;
-    const icons = { success: '✓', error: '✗', info: 'ℹ' };
-    const colors = {
-        success: 'text-green-600 dark:text-green-400',
-        error: 'text-red-600 dark:text-red-400',
-        info: 'text-cyan-600 dark:text-cyan-400',
-    };
-    icon.textContent = icons[type] || '';
-    icon.className = `font-bold text-base ${colors[type] || ''}`;
-
-    el.classList.remove('hidden-toast');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => el.classList.add('hidden-toast'), 4500);
-}
+});
 
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 init();

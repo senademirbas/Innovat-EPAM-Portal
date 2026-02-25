@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, ConfigDict
+from pydantic import BaseModel, EmailStr, ConfigDict, Field
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -12,3 +12,7 @@ class User(UserBase):
     id: str
     role: str
     is_active: bool
+
+class PasswordChange(BaseModel):
+    current_password: str
+    new_password: str = Field(..., min_length=8)
