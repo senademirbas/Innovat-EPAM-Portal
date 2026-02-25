@@ -1,361 +1,422 @@
-// State Management
+/**
+ * InnovatEPAM Portal – app.js (v2)
+ * Handles Auth, Theme, View Routing, Ideas, Admin Review.
+ */
+
+// ─── State ───────────────────────────────────────────────────────────────────
 const state = {
     token: localStorage.getItem('token'),
     user: null,
-    view: 'auth', // 'auth', 'submitter', 'admin'
 };
 
-// DOM Elements
-const elements = {
-    authView: document.getElementById('auth-view'),
-    submitterView: document.getElementById('submitter-view'),
-    adminView: document.getElementById('admin-view'),
-    navUser: document.getElementById('nav-user'),
-    userDisplay: document.getElementById('user-display'),
-    roleBadge: document.getElementById('role-badge'),
-    logoutBtn: document.getElementById('logout-btn'),
-    loginForm: document.getElementById('login-form'),
-    registerForm: document.getElementById('register-form'),
-    toRegister: document.getElementById('to-register'),
-    toLogin: document.getElementById('to-login'),
-    ideaForm: document.getElementById('idea-form'),
-    showIdeaFormBtn: document.getElementById('show-idea-form'),
-    ideaFormContainer: document.getElementById('idea-form-container'),
-    cancelIdeaBtn: document.getElementById('cancel-idea'),
-    myIdeasList: document.getElementById('my-ideas-list'),
-    adminIdeasList: document.getElementById('admin-ideas-list'),
-    evalModal: document.getElementById('eval-modal'),
-    evalForm: document.getElementById('eval-form'),
-    closeEvalBtn: document.getElementById('close-eval'),
-    notification: document.getElementById('notification'),
-    notificationMsg: document.getElementById('notification-msg')
-};
+// ─── DOM refs ─────────────────────────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
 
-// --- Initialization ---
-async function init() {
-    if (state.token) {
-        await fetchUser();
+// ─── Theme ────────────────────────────────────────────────────────────────────
+function initTheme() {
+    const saved = localStorage.getItem('theme') || 'light';
+    applyTheme(saved);
+}
+
+function applyTheme(theme) {
+    if (theme === 'dark') {
+        document.documentElement.classList.add('dark');
+        $('icon-sun').classList.remove('hidden');
+        $('icon-moon').classList.add('hidden');
     } else {
-        showView('auth');
+        document.documentElement.classList.remove('dark');
+        $('icon-moon').classList.remove('hidden');
+        $('icon-sun').classList.add('hidden');
+    }
+    localStorage.setItem('theme', theme);
+}
+
+$('theme-toggle').addEventListener('click', () => {
+    const isDark = document.documentElement.classList.contains('dark');
+    applyTheme(isDark ? 'light' : 'dark');
+});
+
+// ─── Navbar ───────────────────────────────────────────────────────────────────
+function showNavUser(user) {
+    $('nav-user-info').classList.remove('hidden');
+    $('nav-user-info').classList.add('flex');
+    $('nav-email').textContent = user.email;
+
+    const badge = $('nav-role-badge');
+    if (user.role === 'admin') {
+        badge.textContent = 'Admin';
+        badge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300';
+    } else {
+        badge.textContent = 'Submitter';
+        badge.className = 'text-xs px-2 py-0.5 rounded-full font-semibold bg-cyan-100 text-cyan-700 dark:bg-cyan-900/40 dark:text-cyan-300';
     }
 }
 
-// --- View Switching ---
+function hideNavUser() {
+    $('nav-user-info').classList.add('hidden');
+    $('nav-user-info').classList.remove('flex');
+}
+
+// ─── Views ────────────────────────────────────────────────────────────────────
 function showView(view) {
-    state.view = view;
-    Object.values(elements).forEach(el => {
-        if (el && el.id && el.id.endsWith('-view')) {
-            el.classList.add('hidden');
-        }
+    ['auth-view', 'submitter-view', 'admin-view'].forEach(id => $$(id));
+    showEl(view + '-view');
+}
+
+function showEl(id) { const el = $(id); if (el) el.classList.remove('hidden'); }
+function $$(id) { const el = $(id); if (el) el.classList.add('hidden'); }
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
+async function init() {
+    initTheme();
+    if (state.token) {
+        try {
+            const res = await apiFetch('/api/auth/me');
+            if (res.ok) {
+                state.user = await res.json();
+                showNavUser(state.user);
+                if (state.user.role === 'admin') {
+                    showView('admin');
+                    loadAllIdeas();
+                } else {
+                    showView('submitter');
+                    loadMyIdeas();
+                }
+                return;
+            }
+        } catch (_) { }
+    }
+    logout(false);
+}
+
+// Auth form toggle
+let isLoginMode = true;
+$('auth-toggle-btn').addEventListener('click', () => {
+    isLoginMode = !isLoginMode;
+    $('login-form').classList.toggle('hidden', !isLoginMode);
+    $('register-form').classList.toggle('hidden', isLoginMode);
+    $('auth-heading').textContent = isLoginMode ? 'Sign In' : 'Create Account';
+    $('auth-subheading').textContent = isLoginMode ? 'Access your innovation portal' : 'Join the EPAM innovation community';
+    $('auth-toggle-btn').textContent = isLoginMode
+        ? "Don't have an account? Register"
+        : 'Already have an account? Sign in';
+});
+
+$('login-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = new URLSearchParams();
+    form.append('username', $('login-email').value.trim());
+    form.append('password', $('login-password').value);
+
+    const res = await fetch('/api/auth/login', { method: 'POST', body: form });
+    const data = await res.json();
+    if (res.ok) {
+        state.token = data.access_token;
+        localStorage.setItem('token', state.token);
+        toast('Welcome back!', 'success');
+        await init();
+    } else {
+        toast(data.detail || 'Login failed.', 'error');
+    }
+});
+
+$('register-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const res = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: $('reg-email').value.trim(), password: $('reg-password').value }),
     });
-
-    if (view === 'auth') {
-        elements.authView.classList.remove('hidden');
-        elements.navUser.classList.add('hidden');
-    } else if (view === 'submitter') {
-        elements.submitterView.classList.remove('hidden');
-        elements.navUser.classList.remove('hidden');
-        fetchMyIdeas();
-    } else if (view === 'admin') {
-        elements.adminView.classList.remove('hidden');
-        elements.navUser.classList.remove('hidden');
-        fetchAllIdeas();
+    const data = await res.json();
+    if (res.ok) {
+        toast('Account created! Please sign in.', 'success');
+        $('auth-toggle-btn').click();
+    } else {
+        toast(data.detail || 'Registration failed.', 'error');
     }
-}
+});
 
-// --- Authentication ---
-async function fetchUser() {
-    try {
-        const res = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${state.token}` }
-        });
+$('logout-btn').addEventListener('click', () => logout(true));
 
-        if (res.ok) {
-            state.user = await res.json();
-            elements.userDisplay.textContent = state.user.full_name;
-            elements.roleBadge.textContent = state.user.role.toUpperCase();
-            elements.roleBadge.className = `px-2 py-0.5 rounded text-xs font-semibold ${state.user.role === 'admin' ? 'bg-purple-100 text-purple-800' : 'bg-blue-100 text-blue-800'
-                }`;
-            showView(state.user.role === 'admin' ? 'admin' : 'submitter');
-        } else {
-            logout();
-        }
-    } catch (err) {
-        console.error(err);
-        logout();
-    }
-}
-
-async function login(email, password) {
-    const formData = new URLSearchParams();
-    formData.append('username', email); // FastAPI OAuth2 uses 'username' field
-    formData.append('password', password);
-
-    try {
-        const res = await fetch('/api/auth/login', {
-            method: 'POST',
-            body: formData
-        });
-
-        const data = await res.json();
-        if (res.ok) {
-            state.token = data.access_token;
-            localStorage.setItem('token', state.token);
-            notify('Login successful!', 'success');
-            await fetchUser();
-        } else {
-            notify(data.detail || 'Login failed', 'error');
-        }
-    } catch (err) {
-        notify('Connection error', 'error');
-    }
-}
-
-async function register(name, email, password) {
-    try {
-        const res = await fetch('/api/auth/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ full_name: name, email, password })
-        });
-
-        if (res.ok) {
-            notify('Registration successful! Please login.', 'success');
-            elements.registerForm.classList.add('hidden');
-            elements.loginForm.classList.remove('hidden');
-        } else {
-            const data = await res.json();
-            notify(data.detail || 'Registration failed', 'error');
-        }
-    } catch (err) {
-        notify('Connection error', 'error');
-    }
-}
-
-function logout() {
+function logout(notify_user = true) {
     state.token = null;
     state.user = null;
     localStorage.removeItem('token');
+    hideNavUser();
     showView('auth');
+    if (notify_user) toast('Logged out.', 'info');
 }
 
-// --- Idea Management ---
-async function fetchMyIdeas() {
-    try {
-        const res = await fetch('/api/ideas', {
-            headers: { 'Authorization': `Bearer ${state.token}` }
-        });
-        const ideas = await res.json();
-        renderMyIdeas(ideas);
-    } catch (err) {
-        notify('Failed to load ideas', 'error');
-    }
+// ─── API helper ───────────────────────────────────────────────────────────────
+function apiFetch(url, opts = {}) {
+    return fetch(url, {
+        ...opts,
+        headers: {
+            ...(opts.headers || {}),
+            'Authorization': `Bearer ${state.token}`,
+        },
+    });
 }
 
-async function fetchAllIdeas() {
-    try {
-        const res = await fetch('/api/admin/ideas', {
-            headers: { 'Authorization': `Bearer ${state.token}` }
-        });
-        const ideas = await res.json();
-        renderAdminIdeas(ideas);
-    } catch (err) {
-        notify('Failed to load all ideas', 'error');
-    }
+// ─── Submitter: Load my ideas ─────────────────────────────────────────────────
+async function loadMyIdeas() {
+    const res = await apiFetch('/api/ideas');
+    if (!res.ok) { toast('Failed to load ideas.', 'error'); return; }
+    const ideas = await res.json();
+    renderMyIdeas(ideas);
 }
 
-async function submitIdea(event) {
-    event.preventDefault();
-    const formData = new FormData();
-    formData.append('title', document.getElementById('idea-title').value);
-    formData.append('category', document.getElementById('idea-category').value);
-    formData.append('description', document.getElementById('idea-description').value);
-
-    const file = document.getElementById('idea-attachment').files[0];
-    if (file) {
-        formData.append('attachment', file);
-    }
-
-    try {
-        const res = await fetch('/api/ideas', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${state.token}` },
-            body: formData
-        });
-
-        if (res.ok) {
-            notify('Idea submitted successfully!', 'success');
-            elements.ideaForm.reset();
-            elements.ideaFormContainer.classList.add('hidden');
-            fetchMyIdeas();
-        } else {
-            const text = await res.text();
-            console.error('Submission failed:', res.status, text);
-            try {
-                const data = JSON.parse(text);
-                notify(data.detail || 'Submission failed', 'error');
-            } catch (e) {
-                notify(`Error ${res.status}: ${text.substring(0, 50)}...`, 'error');
-            }
-        }
-    } catch (err) {
-        console.error('Fetch error:', err);
-        notify('Connection error: ' + err.message, 'error');
-    }
-}
-
-async function evaluateIdea(event) {
-    event.preventDefault();
-    const ideaId = document.getElementById('eval-idea-id').value;
-    const status = document.getElementById('eval-status').value;
-    const comment = document.getElementById('eval-comment').value;
-
-    try {
-        const res = await fetch(`/api/admin/ideas/${ideaId}/evaluate`, {
-            method: 'PATCH',
-            headers: {
-                'Authorization': `Bearer ${state.token}`,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ status, admin_comment: comment })
-        });
-
-        if (res.ok) {
-            notify('Idea updated!', 'success');
-            elements.evalModal.classList.add('hidden');
-            fetchAllIdeas();
-        } else {
-            const data = await res.json();
-            notify(data.detail || 'Update failed', 'error');
-        }
-    } catch (err) {
-        notify('Connection error', 'error');
-    }
-}
-
-// --- Rendering ---
 function renderMyIdeas(ideas) {
-    if (ideas.length === 0) {
-        elements.myIdeasList.innerHTML = '<p class="text-gray-500 italic">No ideas submitted yet.</p>';
+    const tbody = $('my-ideas-tbody');
+    const emptyRow = $('my-ideas-empty-row');
+
+    // Remove old data rows
+    tbody.querySelectorAll('tr.data-row').forEach(r => r.remove());
+
+    if (!ideas.length) {
+        emptyRow.classList.remove('hidden');
         return;
     }
 
-    elements.myIdeasList.innerHTML = ideas.map(idea => `
-        <div class="bg-white p-5 rounded-lg border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-            <div class="flex justify-between items-start mb-3">
-                <h3 class="font-bold text-lg">${idea.title}</h3>
-                <span class="px-2 py-1 rounded text-xs font-semibold ${getStatusClass(idea.status)}">
-                    ${idea.status}
-                </span>
-            </div>
-            <p class="text-gray-600 text-sm mb-4 line-clamp-3">${idea.description}</p>
-            <div class="flex justify-between items-center text-xs text-gray-500">
-                <span>Category: ${idea.category}</span>
-                <span>${new Date(idea.created_at).toLocaleDateString()}</span>
-            </div>
-            ${idea.admin_comment ? `
-                <div class="mt-4 p-3 bg-gray-50 rounded border-l-4 border-blue-400">
-                    <p class="text-xs font-bold text-gray-700">Admin Comment:</p>
-                    <p class="text-xs italic text-gray-600">${idea.admin_comment}</p>
-                </div>
-            ` : ''}
-            ${idea.file_path ? `
-                <div class="mt-3">
-                    <a href="${idea.file_path}" target="_blank" class="text-blue-600 hover:underline text-xs font-medium">View Attachment</a>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
+    emptyRow.classList.add('hidden');
+    ideas.forEach(idea => {
+        const tr = document.createElement('tr');
+        tr.className = 'data-row';
+        tr.title = 'Click to view details';
+        tr.innerHTML = `
+            <td>
+                <span class="font-semibold hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors">${escapeHtml(idea.title)}</span>
+            </td>
+            <td>${escapeHtml(idea.category)}</td>
+            <td>${formatDate(idea.created_at)}</td>
+            <td>${statusBadge(idea.status)}</td>
+        `;
+        tr.addEventListener('click', () => openDetailModal(idea));
+        tbody.appendChild(tr);
+    });
 }
 
-function renderAdminIdeas(ideas) {
-    if (ideas.length === 0) {
-        elements.adminIdeasList.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-gray-500">No ideas available.</td></tr>';
+// ─── Submitter: Submit new idea ───────────────────────────────────────────────
+$('open-submit-form-btn').addEventListener('click', () => showModal('submit-modal'));
+$('close-submit-modal').addEventListener('click', () => hideModal('submit-modal'));
+$('cancel-submit-modal').addEventListener('click', () => hideModal('submit-modal'));
+
+$('submit-idea-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const fd = new FormData();
+    fd.append('title', $('idea-title').value.trim());
+    fd.append('category', $('idea-category').value);
+    fd.append('description', $('idea-description').value.trim());
+    const file = $('idea-attachment').files[0];
+    if (file) fd.append('attachment', file);
+
+    const res = await apiFetch('/api/ideas', { method: 'POST', body: fd });
+    if (res.ok) {
+        toast('Idea submitted successfully!', 'success');
+        hideModal('submit-modal');
+        $('submit-idea-form').reset();
+        loadMyIdeas();
+    } else {
+        const d = await res.json().catch(() => ({}));
+        toast(d.detail || 'Submission failed.', 'error');
+    }
+});
+
+// ─── Detail Modal (Submitter view) ───────────────────────────────────────────
+function openDetailModal(idea) {
+    $('detail-title').textContent = idea.title;
+    $('detail-category').textContent = idea.category;
+    $('detail-description').textContent = idea.description;
+    $('detail-status-badge').className = `badge ${statusBadgeClass(idea.status)}`;
+    $('detail-status-badge').textContent = idea.status;
+
+    // Attachment
+    if (idea.file_path) {
+        $('detail-attachment-row').classList.remove('hidden');
+        $('detail-attachment-link').href = idea.file_path;
+    } else {
+        $('detail-attachment-row').classList.add('hidden');
+    }
+
+    // Admin comment
+    if (idea.admin_comment) {
+        $('detail-comment-row').classList.remove('hidden');
+        $('detail-comment').textContent = idea.admin_comment;
+    } else {
+        $('detail-comment-row').classList.add('hidden');
+    }
+
+    showModal('detail-modal');
+}
+
+$('close-detail-modal').addEventListener('click', () => hideModal('detail-modal'));
+$('close-detail-btn').addEventListener('click', () => hideModal('detail-modal'));
+
+// ─── Admin: Load all ideas ────────────────────────────────────────────────────
+async function loadAllIdeas() {
+    const res = await apiFetch('/api/admin/ideas');
+    if (!res.ok) { toast('Failed to load ideas.', 'error'); return; }
+    const ideas = await res.json();
+    renderAllIdeas(ideas);
+    $('admin-total-count').textContent = ideas.length;
+}
+
+function renderAllIdeas(ideas) {
+    const tbody = $('all-ideas-tbody');
+    const emptyRow = $('all-ideas-empty-row');
+    tbody.querySelectorAll('tr.data-row').forEach(r => r.remove());
+
+    if (!ideas.length) {
+        emptyRow.textContent = 'No ideas have been submitted yet.';
+        emptyRow.classList.remove('hidden');
         return;
     }
 
-    elements.adminIdeasList.innerHTML = ideas.map(idea => `
-        <tr>
-            <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm sm:pl-6">
-                <div class="font-medium text-gray-900">${idea.title}</div>
-                <div class="text-gray-500 truncate max-w-xs">${idea.description}</div>
+    emptyRow.classList.add('hidden');
+    ideas.forEach(idea => {
+        const tr = document.createElement('tr');
+        tr.className = 'data-row';
+        tr.innerHTML = `
+            <td>
+                <div class="font-semibold">${escapeHtml(idea.title)}</div>
+                <div class="text-xs mt-0.5" style="color: var(--color-text-muted)">${escapeHtml(idea.description).substring(0, 80)}…</div>
             </td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">${idea.category}</td>
-            <td class="whitespace-nowrap px-3 py-4 text-sm">
-                <span class="px-2 py-1 rounded text-xs font-semibold ${getStatusClass(idea.status)}">
-                    ${idea.status}
-                </span>
+            <td>${escapeHtml(idea.category)}</td>
+            <td>${formatDate(idea.created_at)}</td>
+            <td>${statusBadge(idea.status)}</td>
+            <td class="text-right">
+                <button class="btn-primary !text-xs !px-3 !py-1.5 review-btn">Review</button>
             </td>
-            <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                <button onclick="openEvalModal('${idea.id}', '${idea.status}', '${idea.admin_comment || ''}')" class="text-blue-600 hover:text-blue-900">Evaluate</button>
-            </td>
-        </tr>
-    `).join('');
+        `;
+        tr.querySelector('.review-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openReviewModal(idea);
+        });
+        tbody.appendChild(tr);
+    });
 }
 
-function getStatusClass(status) {
-    switch (status) {
-        case 'Under Review': return 'bg-blue-100 text-blue-800';
-        case 'Accepted': return 'bg-green-100 text-green-800';
-        case 'Rejected': return 'bg-red-100 text-red-800';
-        default: return 'bg-gray-100 text-gray-800';
+// ─── Admin Review Modal ───────────────────────────────────────────────────────
+function openReviewModal(idea) {
+    $('review-idea-id').value = idea.id;
+    $('review-title').textContent = idea.title;
+    $('review-category').textContent = idea.category;
+    $('review-description').textContent = idea.description;
+    $('review-status-badge').className = `badge ${statusBadgeClass(idea.status)}`;
+    $('review-status-badge').textContent = idea.status;
+    $('review-comment').value = idea.admin_comment || '';
+
+    if (idea.file_path) {
+        $('review-attachment-row').classList.remove('hidden');
+        $('review-attachment-link').href = idea.file_path;
+    } else {
+        $('review-attachment-row').classList.add('hidden');
+    }
+
+    showModal('review-modal');
+}
+
+$('close-review-modal').addEventListener('click', () => hideModal('review-modal'));
+$('cancel-review-modal').addEventListener('click', () => hideModal('review-modal'));
+
+// Accept button
+$('accept-btn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await submitEvaluation('accepted');
+});
+
+// Reject button
+$('reject-btn').addEventListener('click', async (e) => {
+    e.preventDefault();
+    await submitEvaluation('rejected');
+});
+
+async function submitEvaluation(status) {
+    const id = $('review-idea-id').value;
+    const admin_comment = $('review-comment').value.trim();
+
+    if (!admin_comment) {
+        toast('Please provide an admin comment before submitting.', 'error');
+        $('review-comment').focus();
+        return;
+    }
+
+    const res = await apiFetch(`/api/admin/ideas/${id}/evaluate`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, admin_comment }),
+    });
+
+    if (res.ok) {
+        toast(`Idea ${status === 'accepted' ? 'accepted' : 'rejected'} successfully.`, 'success');
+        hideModal('review-modal');
+        loadAllIdeas();
+    } else {
+        toast('Failed to submit evaluation.', 'error');
     }
 }
 
-function openEvalModal(id, status, comment) {
-    document.getElementById('eval-idea-id').value = id;
-    document.getElementById('eval-status').value = status;
-    document.getElementById('eval-comment').value = comment;
-    elements.evalModal.classList.remove('hidden');
+// ─── Modal helpers ────────────────────────────────────────────────────────────
+function showModal(id) {
+    const el = $(id);
+    el.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    // Close on backdrop click
+    el.addEventListener('click', (e) => {
+        if (e.target === el) hideModal(id);
+    }, { once: true });
 }
 
-// --- Utils ---
-function notify(msg, type = 'info') {
-    elements.notificationMsg.textContent = msg;
-    elements.notification.className = `fixed bottom-4 right-4 max-w-sm w-full bg-white border rounded-lg shadow-lg transform translate-y-0 transition-transform duration-300 z-50 p-4 border-l-4 ${type === 'error' ? 'border-red-500' : 'border-green-500'
-        }`;
-
-    setTimeout(() => {
-        elements.notification.classList.add('translate-y-24');
-    }, 3000);
+function hideModal(id) {
+    $(id).classList.add('hidden');
+    document.body.style.overflow = '';
 }
 
-// --- Event Listeners ---
-elements.toRegister.onclick = (e) => {
-    e.preventDefault();
-    elements.loginForm.classList.add('hidden');
-    elements.registerForm.classList.remove('hidden');
-};
+// ─── Status Badges ────────────────────────────────────────────────────────────
+function statusBadgeClass(status) {
+    const s = (status || '').toLowerCase();
+    if (s === 'accepted') return 'badge-accepted';
+    if (s === 'rejected') return 'badge-rejected';
+    if (s === 'under-review' || s === 'under review') return 'badge-review';
+    return 'badge-pending';
+}
 
-elements.toLogin.onclick = (e) => {
-    e.preventDefault();
-    elements.registerForm.classList.add('hidden');
-    elements.loginForm.classList.remove('hidden');
-};
+function statusBadge(status) {
+    const cls = statusBadgeClass(status);
+    return `<span class="badge ${cls}">${escapeHtml(status || 'Pending')}</span>`;
+}
 
-elements.loginForm.onsubmit = (e) => {
-    e.preventDefault();
-    login(document.getElementById('login-email').value, document.getElementById('login-password').value);
-};
+// ─── Utils ────────────────────────────────────────────────────────────────────
+function escapeHtml(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
 
-elements.registerForm.onsubmit = (e) => {
-    e.preventDefault();
-    register(document.getElementById('reg-name').value, document.getElementById('reg-email').value, document.getElementById('reg-password').value);
-};
+function formatDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
+}
 
-elements.logoutBtn.onclick = logout;
+// ─── Toast Notification ───────────────────────────────────────────────────────
+let toastTimer = null;
+function toast(message, type = 'info') {
+    const el = $('toast');
+    const icon = $('toast-icon');
+    const msg = $('toast-message');
 
-elements.showIdeaFormBtn.onclick = () => {
-    elements.ideaFormContainer.classList.toggle('hidden');
-};
+    msg.textContent = message;
+    const icons = { success: '✓', error: '✗', info: 'ℹ' };
+    const colors = {
+        success: 'text-green-600 dark:text-green-400',
+        error: 'text-red-600 dark:text-red-400',
+        info: 'text-cyan-600 dark:text-cyan-400',
+    };
+    icon.textContent = icons[type] || '';
+    icon.className = `font-bold text-base ${colors[type] || ''}`;
 
-elements.cancelIdeaBtn.onclick = () => {
-    elements.ideaFormContainer.classList.add('hidden');
-};
+    el.classList.remove('hidden-toast');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => el.classList.add('hidden-toast'), 4500);
+}
 
-elements.ideaForm.onsubmit = submitIdea;
-elements.evalForm.onsubmit = evaluateIdea;
-elements.closeEvalBtn.onclick = () => elements.evalModal.classList.add('hidden');
-
-// Start
+// ─── Boot ─────────────────────────────────────────────────────────────────────
 init();
