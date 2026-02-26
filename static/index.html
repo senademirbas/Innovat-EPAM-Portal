@@ -55,7 +55,25 @@
                     <div>
                         <label
                             style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Password</label>
-                        <input id="login-password" type="password" class="input-field" placeholder="••••••••" required>
+                        <div class="pw-wrap">
+                            <input id="login-password" type="password" class="input-field" placeholder="••••••••"
+                                required>
+                            <button type="button" class="pw-toggle" onclick="togglePw('login-password', this)"
+                                title="Show/hide password">
+                                <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2" style="display:none">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" class="btn-primary"
                         style="margin-top:0.5rem;width:100%;justify-content:center">Sign In</button>
@@ -71,8 +89,25 @@
                     <div>
                         <label
                             style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Password</label>
-                        <input id="reg-password" type="password" class="input-field" placeholder="8+ characters"
-                            required minlength="8">
+                        <div class="pw-wrap">
+                            <input id="reg-password" type="password" class="input-field" placeholder="8+ characters"
+                                required minlength="8">
+                            <button type="button" class="pw-toggle" onclick="togglePw('reg-password', this)"
+                                title="Show/hide password">
+                                <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                </svg>
+                                <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                    stroke="currentColor" stroke-width="2" style="display:none">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <button type="submit" class="btn-primary"
                         style="margin-top:0.5rem;width:100%;justify-content:center">Create Account</button>
@@ -277,284 +312,355 @@
 
             <!-- FEED VIEW (Submitter) -->
             <section id="feed-view" class="hidden">
-                <div
-                    style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
-                    <div>
-                        <h2 style="margin-bottom:0.25rem">Innovation Feed</h2>
-                        <p style="color:var(--text-muted);font-size:0.875rem">Your submitted and tracked ideas.</p>
+                <div class="content-wrapper">
+                    <div
+                        style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+                        <div>
+                            <h2 style="margin-bottom:0.25rem">Innovation Feed</h2>
+                            <p style="color:var(--text-muted);font-size:0.875rem">Your submitted and tracked ideas.</p>
+                        </div>
+                        <button class="btn-primary" id="open-submit-btn">
+                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            New Idea
+                        </button>
                     </div>
-                    <button class="btn-primary" id="open-submit-btn">
-                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                        </svg>
-                        New Idea
-                    </button>
-                </div>
 
-                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
-                    <button class="filter-chip active" data-filter="all">All</button>
-                    <button class="filter-chip" data-filter="submitted">Pending</button>
-                    <button class="filter-chip" data-filter="accepted">Accepted</button>
-                    <button class="filter-chip" data-filter="rejected">Rejected</button>
-                </div>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
+                        <button class="filter-chip active" data-filter="all">All</button>
+                        <button class="filter-chip" data-filter="submitted">Pending</button>
+                        <button class="filter-chip" data-filter="accepted">Accepted</button>
+                        <button class="filter-chip" data-filter="rejected">Rejected</button>
+                    </div>
 
-                <div id="idea-feed"></div>
+                    <div id="idea-feed"></div>
+                </div><!-- /.content-wrapper -->
             </section>
 
             <!-- ADMIN VIEW -->
             <section id="admin-view" class="hidden">
-                <div style="margin-bottom:1.5rem">
-                    <h2 style="margin-bottom:0.25rem">Admin Dashboard</h2>
-                    <p style="color:var(--text-muted);font-size:0.875rem">Review, evaluate, and monitor all submissions.
-                    </p>
-                </div>
+                <div class="content-wrapper">
+                    <div style="margin-bottom:1.5rem">
+                        <h2 style="margin-bottom:0.25rem">Admin Dashboard</h2>
+                        <p style="color:var(--text-muted);font-size:0.875rem">Review, evaluate, and monitor all
+                            submissions.
+                        </p>
+                    </div>
 
-                <!-- KPI Cards -->
-                <div
-                    style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
-                    <div class="kpi-card">
-                        <p class="kpi-label">Total Ideas</p>
-                        <p id="kpi-total" class="kpi-value">—</p>
-                        <p id="kpi-total-trend" class="kpi-trend flat"></p>
+                    <!-- KPI Cards -->
+                    <div
+                        style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
+                        <div class="kpi-card">
+                            <p class="kpi-label">Total Ideas</p>
+                            <p id="kpi-total" class="kpi-value">—</p>
+                            <p id="kpi-total-trend" class="kpi-trend flat"></p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="kpi-label">Accepted</p>
+                            <p id="kpi-accepted" class="kpi-value" style="color:#22c55e">—</p>
+                            <p id="kpi-accepted-trend" class="kpi-trend up"></p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="kpi-label">Pending</p>
+                            <p id="kpi-pending" class="kpi-value" style="color:#f59e0b">—</p>
+                            <p id="kpi-pending-trend" class="kpi-trend flat"></p>
+                        </div>
+                        <div class="kpi-card">
+                            <p class="kpi-label">Success Rate</p>
+                            <p id="kpi-rate" class="kpi-value" style="color:var(--accent)">—</p>
+                            <p id="kpi-rate-trend" class="kpi-trend up"></p>
+                        </div>
                     </div>
-                    <div class="kpi-card">
-                        <p class="kpi-label">Accepted</p>
-                        <p id="kpi-accepted" class="kpi-value" style="color:#22c55e">—</p>
-                        <p id="kpi-accepted-trend" class="kpi-trend up"></p>
-                    </div>
-                    <div class="kpi-card">
-                        <p class="kpi-label">Pending</p>
-                        <p id="kpi-pending" class="kpi-value" style="color:#f59e0b">—</p>
-                        <p id="kpi-pending-trend" class="kpi-trend flat"></p>
-                    </div>
-                    <div class="kpi-card">
-                        <p class="kpi-label">Success Rate</p>
-                        <p id="kpi-rate" class="kpi-value" style="color:var(--accent)">—</p>
-                        <p id="kpi-rate-trend" class="kpi-trend up"></p>
-                    </div>
-                </div>
 
-                <!-- Chart -->
-                <div class="chart-container" style="margin-bottom:1.5rem">
-                    <p class="section-label">Idea Submissions — Last 30 Days</p>
-                    <div style="height:220px"><canvas id="submissions-chart"></canvas></div>
-                </div>
+                    <!-- Chart -->
+                    <div class="chart-container" style="margin-bottom:1.5rem">
+                        <p class="section-label">Idea Submissions — Last 30 Days</p>
+                        <div style="height:220px"><canvas id="submissions-chart"></canvas></div>
+                    </div>
 
-                <!-- All ideas feed -->
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-                    <p class="section-label" style="margin-bottom:0">All Submissions</p>
-                    <span id="admin-count" style="font-size:0.75rem;color:var(--text-muted)"></span>
-                </div>
-                <div id="admin-feed"></div>
+                    <!-- All ideas feed -->
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                        <p class="section-label" style="margin-bottom:0">All Submissions</p>
+                        <span id="admin-count" style="font-size:0.75rem;color:var(--text-muted)"></span>
+                    </div>
+                    <div id="admin-feed"></div>
+                </div><!-- /.content-wrapper -->
             </section>
 
             <!-- PROFILE VIEW -->
             <section id="profile-view" class="hidden">
-                <div style="margin-bottom:1.5rem">
-                    <h2 style="margin-bottom:0.25rem">My Profile</h2>
-                    <p style="color:var(--text-muted);font-size:0.875rem">Your identity, social links, and submission
-                        history.</p>
-                </div>
-
-                <div class="bento-grid">
-                    <!-- Identity card -->
-                    <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
-                        <div style="display:flex;align-items:center;gap:1rem">
-                            <div class="avatar-lg" id="profile-avatar-lg"></div>
-                            <div style="flex:1;min-width:0">
-                                <h3 id="profile-name"
-                                    style="margin-bottom:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                                </h3>
-                                <p id="profile-bio"
-                                    style="color:var(--text-muted);font-size:0.875rem;line-height:1.4;margin-bottom:0.625rem">
-                                </p>
-                                <div id="profile-social-links" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
-                            </div>
-                        </div>
-                        <div id="profile-role-pill" style="align-self:flex-start"></div>
+                <div class="content-wrapper">
+                    <div style="margin-bottom:1.5rem">
+                        <h2 style="margin-bottom:0.25rem">My Profile</h2>
+                        <p style="color:var(--text-muted);font-size:0.875rem">Your identity, social links, and
+                            submission
+                            history.</p>
                     </div>
 
-                    <!-- Stats card -->
-                    <div class="glass-card" style="padding:1.75rem">
-                        <p class="section-label">Submission Stats</p>
-                        <div
-                            style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.875rem;margin-bottom:0.875rem">
-                            <div style="text-align:center">
-                                <p id="stat-total" style="font-size:2rem;font-weight:800;letter-spacing:-0.03em">—</p>
-                                <p
-                                    style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
-                                    Total</p>
+                    <div class="bento-grid">
+                        <!-- Identity card -->
+                        <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
+                            <div style="display:flex;align-items:center;gap:1rem">
+                                <div class="avatar-lg" id="profile-avatar-lg"></div>
+                                <div style="flex:1;min-width:0">
+                                    <h3 id="profile-name"
+                                        style="margin-bottom:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                                    </h3>
+                                    <p id="profile-bio"
+                                        style="color:var(--text-muted);font-size:0.875rem;line-height:1.4;margin-bottom:0.625rem">
+                                    </p>
+                                    <div id="profile-social-links" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
+                                </div>
                             </div>
-                            <div style="text-align:center">
-                                <p id="stat-accepted"
-                                    style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#22c55e">—</p>
-                                <p
-                                    style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
-                                    Accepted</p>
-                            </div>
-                            <div style="text-align:center">
-                                <p id="stat-rejected"
-                                    style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#ef4444">—</p>
-                                <p
-                                    style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
-                                    Rejected</p>
-                            </div>
+                            <div id="profile-role-pill" style="align-self:flex-start"></div>
                         </div>
-                        <div
-                            style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem;padding:1rem;text-align:center">
-                            <p id="stat-rate"
-                                style="font-size:1.75rem;font-weight:800;color:var(--accent);letter-spacing:-0.03em">—
-                            </p>
-                            <p style="font-size:0.75rem;color:var(--text-muted);font-weight:600">Success Rate</p>
-                        </div>
-                    </div>
 
-                    <!-- Edit profile form -->
-                    <div class="glass-card" style="padding:1.75rem">
-                        <h4 style="margin-bottom:1.25rem">Edit Profile</h4>
-                        <form id="edit-profile-form" style="display:flex;flex-direction:column;gap:1rem">
-                            <div>
-                                <label
-                                    style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Avatar
-                                    URL</label>
-                                <input id="ep-avatar" type="url" class="input-field"
-                                    placeholder="https://example.com/avatar.png">
-                            </div>
-                            <div>
-                                <label
-                                    style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Bio</label>
-                                <textarea id="ep-bio" class="input-field" rows="2" maxlength="200"
-                                    placeholder="A short description about yourself…"></textarea>
+                        <!-- Stats card -->
+                        <div class="glass-card" style="padding:1.75rem">
+                            <p class="section-label">Submission Stats</p>
+                            <div
+                                style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.875rem;margin-bottom:0.875rem">
+                                <div style="text-align:center">
+                                    <p id="stat-total" style="font-size:2rem;font-weight:800;letter-spacing:-0.03em">—
+                                    </p>
+                                    <p
+                                        style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
+                                        Total</p>
+                                </div>
+                                <div style="text-align:center">
+                                    <p id="stat-accepted"
+                                        style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#22c55e">—
+                                    </p>
+                                    <p
+                                        style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
+                                        Accepted</p>
+                                </div>
+                                <div style="text-align:center">
+                                    <p id="stat-rejected"
+                                        style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#ef4444">—
+                                    </p>
+                                    <p
+                                        style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
+                                        Rejected</p>
+                                </div>
                             </div>
                             <div
-                                style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
-                                <div>
-                                    <label
-                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">GitHub</label>
-                                    <input id="ep-github" type="url" class="input-field"
-                                        placeholder="https://github.com/you">
-                                </div>
-                                <div>
-                                    <label
-                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">LinkedIn</label>
-                                    <input id="ep-linkedin" type="url" class="input-field"
-                                        placeholder="https://linkedin.com/in/you">
-                                </div>
+                                style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem;padding:1rem;text-align:center">
+                                <p id="stat-rate"
+                                    style="font-size:1.75rem;font-weight:800;color:var(--accent);letter-spacing:-0.03em">
+                                    —
+                                </p>
+                                <p style="font-size:0.75rem;color:var(--text-muted);font-weight:600">Success Rate</p>
                             </div>
-                            <button type="submit" class="btn-primary" style="align-self:flex-start">Save
-                                Profile</button>
-                        </form>
-                    </div>
+                        </div>
 
-                    <!-- Change password -->
-                    <div class="glass-card" style="padding:1.75rem">
-                        <h4 style="margin-bottom:1.25rem">Change Password</h4>
-                        <form id="change-password-form" style="display:flex;flex-direction:column;gap:1rem">
-                            <div>
-                                <label
-                                    style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Current
-                                    Password</label>
-                                <input id="cp-current" type="password" class="input-field" placeholder="••••••••"
-                                    required>
-                            </div>
-                            <div>
-                                <label
-                                    style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">New
-                                    Password</label>
-                                <input id="cp-new" type="password" class="input-field" placeholder="8+ characters"
-                                    required minlength="8">
-                            </div>
-                            <div>
-                                <label
-                                    style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Confirm
-                                    New</label>
-                                <input id="cp-confirm" type="password" class="input-field"
-                                    placeholder="Repeat new password" required>
-                            </div>
-                            <button type="submit" class="btn-primary" style="align-self:flex-start">Update
-                                Password</button>
-                        </form>
+                        <!-- Edit profile form -->
+                        <div class="glass-card" style="padding:1.75rem">
+                            <h4 style="margin-bottom:1.25rem">Edit Profile</h4>
+                            <form id="edit-profile-form" style="display:flex;flex-direction:column;gap:1rem">
+                                <div>
+                                    <label
+                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Avatar
+                                        URL</label>
+                                    <input id="ep-avatar" type="url" class="input-field"
+                                        placeholder="https://example.com/avatar.png">
+                                </div>
+                                <div>
+                                    <label
+                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Bio</label>
+                                    <textarea id="ep-bio" class="input-field" rows="2" maxlength="200"
+                                        placeholder="A short description about yourself…"></textarea>
+                                </div>
+                                <div
+                                    style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
+                                    <div>
+                                        <label
+                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">GitHub</label>
+                                        <input id="ep-github" type="url" class="input-field"
+                                            placeholder="https://github.com/you">
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">LinkedIn</label>
+                                        <input id="ep-linkedin" type="url" class="input-field"
+                                            placeholder="https://linkedin.com/in/you">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary" style="align-self:flex-start">Save
+                                    Profile</button>
+                            </form>
+                        </div>
+
+                        <!-- Change password -->
+                        <div class="glass-card" style="padding:1.75rem">
+                            <h4 style="margin-bottom:1.25rem">Change Password</h4>
+                            <form id="change-password-form" style="display:flex;flex-direction:column;gap:1rem">
+                                <div>
+                                    <label
+                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Current
+                                        Password</label>
+                                    <div class="pw-wrap">
+                                        <input id="cp-current" type="password" class="input-field"
+                                            placeholder="••••••••" required>
+                                        <button type="button" class="pw-toggle" onclick="togglePw('cp-current', this)"
+                                            title="Show/hide">
+                                            <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2" style="display:none">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">New
+                                        Password</label>
+                                    <div class="pw-wrap">
+                                        <input id="cp-new" type="password" class="input-field"
+                                            placeholder="8+ characters" required minlength="8">
+                                        <button type="button" class="pw-toggle" onclick="togglePw('cp-new', this)"
+                                            title="Show/hide">
+                                            <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2" style="display:none">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label
+                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Confirm
+                                        New</label>
+                                    <div class="pw-wrap">
+                                        <input id="cp-confirm" type="password" class="input-field"
+                                            placeholder="Repeat new password" required>
+                                        <button type="button" class="pw-toggle" onclick="togglePw('cp-confirm', this)"
+                                            title="Show/hide">
+                                            <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                            <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
+                                                stroke="currentColor" stroke-width="2" style="display:none">
+                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn-primary" style="align-self:flex-start">Update
+                                    Password</button>
+                            </form>
+                        </div>
                     </div>
-                </div>
+                </div><!-- /.content-wrapper -->
             </section>
 
             <!-- WORKSPACE VIEW -->
             <section id="workspace-view" class="hidden">
-                <div style="margin-bottom:1.5rem">
-                    <h2 style="margin-bottom:0.25rem">My Workspace</h2>
-                    <p style="color:var(--text-muted);font-size:0.875rem">Personal tasks and schedule at a glance.</p>
-                </div>
-                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
-                    <!-- Todo Checklist -->
-                    <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
-                        <div style="display:flex;align-items:center;justify-content:space-between">
-                            <h4 style="font-size:1rem;font-weight:800">My Tasks</h4>
-                            <span id="todo-count"
-                                style="font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:9999px;background:var(--bg-elevated);color:var(--text-muted);font-weight:700">0
-                                tasks</span>
-                        </div>
-                        <!-- Add todo input -->
-                        <div style="display:flex;gap:0.5rem">
-                            <input id="todo-input" type="text" class="input-field" placeholder="Add a task…"
-                                style="flex:1" onkeydown="if(event.key==='Enter')addTodo()">
-                            <button onclick="addTodo()" class="btn-primary"
-                                style="padding:0.5rem 1rem;border-radius:0.625rem;flex-shrink:0">Add</button>
-                        </div>
-                        <!-- Todo list -->
-                        <div id="todo-list"
-                            style="display:flex;flex-direction:column;gap:0.5rem;max-height:24rem;overflow-y:auto">
-                        </div>
+                <div class="content-wrapper">
+                    <div style="margin-bottom:1.5rem">
+                        <h2 style="margin-bottom:0.25rem">My Workspace</h2>
+                        <p style="color:var(--text-muted);font-size:0.875rem">Personal tasks and schedule at a glance.
+                        </p>
                     </div>
+                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
+                        <!-- Todo Checklist -->
+                        <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
+                            <div style="display:flex;align-items:center;justify-content:space-between">
+                                <h4 style="font-size:1rem;font-weight:800">My Tasks</h4>
+                                <span id="todo-count"
+                                    style="font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:9999px;background:var(--bg-elevated);color:var(--text-muted);font-weight:700">0
+                                    tasks</span>
+                            </div>
+                            <!-- Add todo input -->
+                            <div style="display:flex;gap:0.5rem">
+                                <input id="todo-input" type="text" class="input-field" placeholder="Add a task…"
+                                    style="flex:1" onkeydown="if(event.key==='Enter')addTodo()">
+                                <button onclick="addTodo()" class="btn-primary"
+                                    style="padding:0.5rem 1rem;border-radius:0.625rem;flex-shrink:0">Add</button>
+                            </div>
+                            <!-- Todo list -->
+                            <div id="todo-list"
+                                style="display:flex;flex-direction:column;gap:0.5rem;max-height:24rem;overflow-y:auto">
+                            </div>
+                        </div>
 
-                    <!-- Mini Calendar -->
-                    <div class="glass-card" style="padding:1.75rem">
-                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-                            <button onclick="calPrev()" class="btn-icon" style="font-size:1rem">&#8249;</button>
-                            <h4 id="cal-title" style="font-size:0.9375rem;font-weight:800"></h4>
-                            <button onclick="calNext()" class="btn-icon" style="font-size:1rem">&#8250;</button>
-                        </div>
-                        <div id="mini-calendar" class="calendar-grid"></div>
-                        <div
-                            style="margin-top:1rem;display:flex;align-items:center;gap:1rem;font-size:0.7rem;color:var(--text-muted);font-weight:600">
-                            <span><span
-                                    style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:middle"></span>Idea</span>
-                            <span><span
-                                    style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;margin-right:4px;vertical-align:middle"></span>Event</span>
+                        <!-- Mini Calendar -->
+                        <div class="glass-card" style="padding:1.75rem">
+                            <div
+                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                                <button onclick="calPrev()" class="btn-icon" style="font-size:1rem">&#8249;</button>
+                                <h4 id="cal-title" style="font-size:0.9375rem;font-weight:800"></h4>
+                                <button onclick="calNext()" class="btn-icon" style="font-size:1rem">&#8250;</button>
+                            </div>
+                            <div id="mini-calendar" class="calendar-grid"></div>
+                            <div
+                                style="margin-top:1rem;display:flex;align-items:center;gap:1rem;font-size:0.7rem;color:var(--text-muted);font-weight:600">
+                                <span><span
+                                        style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:middle"></span>Idea</span>
+                                <span><span
+                                        style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;margin-right:4px;vertical-align:middle"></span>Event</span>
+                            </div>
                         </div>
                     </div>
-                </div>
+                </div><!-- /.content-wrapper -->
             </section>
 
             <!-- USERS VIEW (Admin Only) -->
             <section id="users-view" class="hidden">
-                <div
-                    style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
-                    <div>
-                        <h2 style="margin-bottom:0.25rem">User Management</h2>
-                        <p style="color:var(--text-muted);font-size:0.875rem">View, manage and promote registered users.
-                        </p>
+                <div class="content-wrapper">
+                    <div
+                        style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+                        <div>
+                            <h2 style="margin-bottom:0.25rem">User Management</h2>
+                            <p style="color:var(--text-muted);font-size:0.875rem">View, manage and promote registered
+                                users.
+                            </p>
+                        </div>
+                        <span id="users-count"
+                            style="font-size:0.8125rem;color:var(--text-muted);font-weight:600"></span>
                     </div>
-                    <span id="users-count" style="font-size:0.8125rem;color:var(--text-muted);font-weight:600"></span>
-                </div>
-                <div class="glass-card" style="padding:0;overflow:hidden">
-                    <div style="overflow-x:auto">
-                        <table class="user-table" id="users-table">
-                            <thead>
-                                <tr>
-                                    <th>User</th>
-                                    <th>Role</th>
-                                    <th>Total</th>
-                                    <th>Accepted</th>
-                                    <th>Rate</th>
-                                    <th>Activity</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody id="users-tbody"></tbody>
-                        </table>
+                    <div class="glass-card" style="padding:0;overflow:hidden">
+                        <div style="overflow-x:auto">
+                            <table class="user-table" id="users-table">
+                                <thead>
+                                    <tr>
+                                        <th>User</th>
+                                        <th>Role</th>
+                                        <th>Total</th>
+                                        <th>Accepted</th>
+                                        <th>Rate</th>
+                                        <th>Activity</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="users-tbody"></tbody>
+                            </table>
+                        </div>
                     </div>
-                </div>
+                </div><!-- /.content-wrapper -->
             </section>
 
         </main>
@@ -679,12 +785,15 @@
     </div>
 
     <!-- ═══════════════════════════════════════════════
-     SUBMIT IDEA MODAL (3-Step)
+     SUBMIT IDEA MODAL (Simple — 1 Step)
 ═══════════════════════════════════════════════ -->
     <div id="submit-modal" class="modal-overlay hidden">
         <div class="modal-box">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem">
-                <h3>Submit New Idea</h3>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem">
+                <div>
+                    <h3 style="margin-bottom:0.25rem">New Idea</h3>
+                    <p style="font-size:0.8125rem;color:var(--text-muted)">Share your innovation with the team.</p>
+                </div>
                 <button class="btn-icon" onclick="closeSubmitModal()">
                     <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -692,106 +801,71 @@
                 </button>
             </div>
 
-            <!-- Step progress -->
-            <div class="step-indicator">
-                <span id="step-label" style="color:var(--text-muted)">Step 1 of 3 — Details & Tags</span>
-                <span id="step-frac" style="color:var(--accent);font-weight:700">1/3</span>
-            </div>
-            <div class="step-progress-track">
-                <div id="step-progress-fill" class="step-progress-fill" style="width:33%"></div>
-            </div>
-
-            <form id="submit-idea-form">
-                <!-- Step 1 -->
-                <div id="step-1" class="step-panel active" style="display:flex;flex-direction:column;gap:1rem">
-                    <div>
-                        <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Title
-                            <span style="color:#ef4444">*</span></label>
-                        <input id="idea-title" type="text" class="input-field"
-                            placeholder="e.g. AI-Powered Code Review Tool" required>
-                    </div>
-                    <div>
-                        <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Category
-                            <span style="color:#ef4444">*</span></label>
-                        <select id="idea-category" class="input-field" required>
-                            <option value="" disabled selected>Select a category…</option>
-                            <option value="AI">AI &amp; Machine Learning</option>
-                            <option value="Cloud">Cloud Native</option>
-                            <option value="Productivity">Developer Productivity</option>
-                            <option value="Security">Security</option>
-                            <option value="Process">Process Optimization</option>
-                            <option value="Other">Other</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Tags <span
-                                style="font-size:0.75rem;font-weight:400;color:var(--text-muted)">(click to
-                                add)</span></label>
-                        <div id="tag-chips" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.625rem">
-                            <button type="button" class="tag-chip-btn" data-tag="AI">AI</button>
-                            <button type="button" class="tag-chip-btn" data-tag="LLM">LLM</button>
-                            <button type="button" class="tag-chip-btn" data-tag="Cloud">Cloud</button>
-                            <button type="button" class="tag-chip-btn" data-tag="DevTools">DevTools</button>
-                            <button type="button" class="tag-chip-btn" data-tag="Security">Security</button>
-                            <button type="button" class="tag-chip-btn" data-tag="Automation">Automation</button>
-                            <button type="button" class="tag-chip-btn" data-tag="Open Source">Open Source</button>
-                            <button type="button" class="tag-chip-btn" data-tag="Data">Data</button>
-                        </div>
-                        <input id="idea-tags-input" type="text" class="input-field"
-                            placeholder="Or type custom tags, comma-separated">
-                    </div>
-                    <div style="display:flex;justify-content:flex-end;padding-top:0.5rem">
-                        <button type="button" id="step1-next" class="btn-primary">Next →</button>
-                    </div>
+            <form id="submit-idea-form" style="display:flex;flex-direction:column;gap:1.25rem">
+                <!-- Title -->
+                <div>
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">
+                        Title <span style="color:#ef4444">*</span>
+                    </label>
+                    <input id="idea-title" type="text" class="input-field"
+                        placeholder="e.g. AI-Powered Code Review Tool" required>
                 </div>
 
-                <!-- Step 2 -->
-                <div id="step-2" class="step-panel" style="display:flex;flex-direction:column;gap:1rem">
-                    <div>
-                        <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Problem
-                            Statement</label>
-                        <p style="font-size:0.8rem;color:var(--text-muted);margin-bottom:0.625rem">What specific problem
-                            does this idea solve? Who is affected?</p>
-                        <textarea id="idea-problem" class="input-field" rows="7"
-                            placeholder="Describe the pain point or opportunity in detail…"></textarea>
-                    </div>
-                    <div style="display:flex;justify-content:space-between;padding-top:0.5rem">
-                        <button type="button" id="step2-back" class="btn-ghost">← Back</button>
-                        <button type="button" id="step2-next" class="btn-primary">Next →</button>
-                    </div>
+                <!-- Category -->
+                <div>
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">
+                        Category <span style="color:#ef4444">*</span>
+                    </label>
+                    <select id="idea-category" class="input-field" required>
+                        <option value="" disabled selected>Select a category…</option>
+                        <option value="AI">AI &amp; Machine Learning</option>
+                        <option value="Cloud">Cloud Native</option>
+                        <option value="Productivity">Developer Productivity</option>
+                        <option value="Security">Security</option>
+                        <option value="Process">Process Optimization</option>
+                        <option value="Other">Other</option>
+                    </select>
                 </div>
 
-                <!-- Step 3 -->
-                <div id="step-3" class="step-panel" style="display:flex;flex-direction:column;gap:1rem">
-                    <div>
-                        <label
-                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Description
-                            <span style="color:#ef4444">*</span></label>
-                        <textarea id="idea-description" class="input-field" rows="3"
-                            placeholder="Brief executive summary (required)…" required></textarea>
+                <!-- Tags -->
+                <div>
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">
+                        Tags <span style="font-size:0.75rem;font-weight:400;color:var(--text-muted)">(click to
+                            add)</span>
+                    </label>
+                    <div id="tag-chips" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.625rem">
+                        <button type="button" class="tag-chip-btn" data-tag="AI">AI</button>
+                        <button type="button" class="tag-chip-btn" data-tag="LLM">LLM</button>
+                        <button type="button" class="tag-chip-btn" data-tag="Cloud">Cloud</button>
+                        <button type="button" class="tag-chip-btn" data-tag="DevTools">DevTools</button>
+                        <button type="button" class="tag-chip-btn" data-tag="Security">Security</button>
+                        <button type="button" class="tag-chip-btn" data-tag="Automation">Automation</button>
+                        <button type="button" class="tag-chip-btn" data-tag="Open Source">Open Source</button>
+                        <button type="button" class="tag-chip-btn" data-tag="Data">Data</button>
                     </div>
-                    <div>
-                        <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Proposed
-                            Solution</label>
-                        <textarea id="idea-solution" class="input-field" rows="4"
-                            placeholder="How does your idea solve the problem?"></textarea>
-                    </div>
-                    <div>
-                        <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Attachment
-                            <span
-                                style="font-size:0.75rem;font-weight:400;color:var(--text-muted)">(optional)</span></label>
-                        <input id="idea-attachment" type="file" class="input-field" style="padding:0.5rem 0.875rem">
-                    </div>
-                    <div style="display:flex;gap:0.75rem;padding-top:0.5rem">
-                        <button type="button" id="step3-back" class="btn-ghost">← Back</button>
-                        <button type="submit" class="btn-primary" style="flex:1;justify-content:center">
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                            Submit Idea
-                        </button>
-                    </div>
+                    <input id="idea-tags-input" type="text" class="input-field"
+                        placeholder="Or type custom tags, comma-separated">
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">
+                        Description <span style="color:#ef4444">*</span>
+                    </label>
+                    <textarea id="idea-description" class="input-field" rows="5"
+                        placeholder="What is your idea and what problem does it solve?" required></textarea>
+                </div>
+
+                <!-- Submit -->
+                <div style="display:flex;gap:0.75rem;padding-top:0.25rem">
+                    <button type="button" class="btn-ghost" onclick="closeSubmitModal()">Cancel</button>
+                    <button type="submit" class="btn-primary" style="flex:1;justify-content:center">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                            stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                        Submit Idea
+                    </button>
                 </div>
             </form>
         </div>
@@ -806,8 +880,8 @@
         <span class="toast-close" onclick="this.closest('.toast').className='toast toast-hidden'">✕</span>
     </div>
 
-    <script src="app.js"></script>
     <!-- Event Modal (Calendar) -->
+
     <div id="event-modal" class="drawer" style="width:min(400px, 100vw)">
         <div class="drawer-header">
             <h3>Add Calendar Event</h3>
@@ -849,4 +923,5 @@
     </div>
 </body>
 
+<script src="app.js"></script>
 </html>

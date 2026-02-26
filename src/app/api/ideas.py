@@ -24,8 +24,8 @@ def _to_public(idea) -> dict:
 
 @router.post("", response_model=IdeaPublic, status_code=status.HTTP_201_CREATED)
 def create_idea(
-    title: str = Form(..., min_length=3, max_length=100),
-    description: str = Form(..., min_length=10, max_length=2000),
+    title: str = Form(...),
+    description: str = Form(...),
     category: str = Form(...),
     tags: Optional[str] = Form(None),
     problem_statement: Optional[str] = Form(None),

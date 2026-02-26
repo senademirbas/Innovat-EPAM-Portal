@@ -19,6 +19,15 @@ const state = {
 // ─── DOM shortcut ─────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
+// ─── Password Toggle ──────────────────────────────────────────────────────────
+function togglePw(inputId, btn) {
+    const input = $(inputId);
+    const isHidden = input.type === 'password';
+    input.type = isHidden ? 'text' : 'password';
+    btn.querySelector('.eye-open').style.display = isHidden ? 'none' : '';
+    btn.querySelector('.eye-shut').style.display = isHidden ? '' : 'none';
+}
+
 // ─── API ──────────────────────────────────────────────────────────────────────
 async function apiFetch(path, opts = {}) {
     const headers = { ...(opts.headers || {}) };
@@ -616,25 +625,13 @@ function closeDrawers() {
     $('drawer-overlay').classList.remove('visible');
 }
 
-// ─── Submit Modal (3-Step) ────────────────────────────────────────────────────
-const STEP_LABELS = ['Details & Tags', 'Problem Statement', 'Description & Solution'];
-function goToStep(n) {
-    state.currentStep = n;
-    [1, 2, 3].forEach(i => {
-        $(`step-${i}`).classList.toggle('active', i === n);
-        $(`step-${i}`).style.display = i === n ? 'flex' : 'none';
-    });
-    $('step-label').textContent = `Step ${n} of 3 — ${STEP_LABELS[n - 1]}`;
-    $('step-frac').textContent = `${n}/3`;
-    $('step-progress-fill').style.width = `${Math.round((n / 3) * 100)}%`;
-}
 
+// ─── Submit Modal ─────────────────────────────────────────────────────────────
 function openSubmitModal() {
     state.selectedTags.clear();
     document.querySelectorAll('.tag-chip-btn').forEach(b => b.classList.remove('selected'));
     $('idea-tags-input').value = '';
     $('submit-idea-form').reset();
-    goToStep(1);
     $('submit-modal').classList.remove('hidden');
 }
 function closeSubmitModal() { $('submit-modal').classList.add('hidden'); }
@@ -653,27 +650,21 @@ document.querySelectorAll('.tag-chip-btn').forEach(btn => {
     });
 });
 
-$('step1-next').addEventListener('click', () => {
-    if (!$('idea-title').value.trim()) { showToast('Please enter a title.', 'error'); return; }
-    if (!$('idea-category').value) { showToast('Please select a category.', 'error'); return; }
-    goToStep(2);
-});
-$('step2-back').addEventListener('click', () => goToStep(1));
-$('step2-next').addEventListener('click', () => goToStep(3));
-$('step3-back').addEventListener('click', () => goToStep(2));
-
 $('submit-idea-form').addEventListener('submit', async e => {
     e.preventDefault();
+    const title = $('idea-title').value.trim();
+    const category = $('idea-category').value;
+    const description = $('idea-description').value.trim();
+    if (!title) { showToast('Please enter a title.', 'error'); return; }
+    if (!category) { showToast('Please select a category.', 'error'); return; }
+    if (!description) { showToast('Please enter a description.', 'error'); return; }
+
     const tags = $('idea-tags-input').value.trim() || [...state.selectedTags].join(', ');
     const fd = new FormData();
-    fd.append('title', $('idea-title').value);
-    fd.append('category', $('idea-category').value);
-    fd.append('description', $('idea-description').value);
+    fd.append('title', title);
+    fd.append('category', category);
+    fd.append('description', description);
     if (tags) fd.append('tags', tags);
-    if ($('idea-problem').value.trim()) fd.append('problem_statement', $('idea-problem').value.trim());
-    if ($('idea-solution').value.trim()) fd.append('solution', $('idea-solution').value.trim());
-    const file = $('idea-attachment').files[0];
-    if (file) fd.append('attachment', file);
 
     const res = await apiFetch('/api/ideas', { method: 'POST', body: fd });
     if (res.ok) {
