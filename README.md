@@ -5,59 +5,48 @@
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white)
 ![Pytest](https://img.shields.io/badge/pytest-%23C90000.svg?style=for-the-badge&logo=pytest&logoColor=white)
 
-InnovatEPAM Portal is an AI-native web application designed to manage project ideas within an innovation framework. Built during the **A!tech Bootcamp**, it demonstrates a full Spec-Driven Development (SDD) lifecycle.
+InnovatEPAM Portal is an enterprise innovation platform built to manage engineering project ideas within EPAM. It demonstrates a full Spec-Driven Development (SDD) lifecycle, moving from raw submissions to administrative evaluation and actionable task assignment.
 
 ---
 
 ## 🛠 Features
 
 ### 🔐 User Authentication & RBAC
-- **Secure Registration**: User signup with password hashing (bcrypt).
-- **JWT Authentication**: Token-based login and session management.
-- **Role-Based Access Control**: Strict separation between `submitter` and `admin` roles.
+- **Multi-Role Security**: Distinct permissions for `submitters` and `admins`.
+- **JWT Auth**: Zero-session stateless security with password hashing.
+- **Privacy First**: Submitters can only manage their own ideas, while admins have global visibility.
 
-### 💡 Idea Submission Engine
-- **Multipart Data Support**: Submit ideas with titles, detailed descriptions, and categories.
-- **Secure File Uploads**: Support for single file attachments per idea, stored securely with UUID-based naming.
-- **Dashboard**: Personal view for submitters to track their own contributions.
+### 💡 Idea Submission & Discovery
+- **Rich Forms**: Support for Titles, Categories, Tags, and specialized Problem/Solution statements.
+- **Secure Attachments**: Support for file uploads per submission, safely handled via UUID naming.
+- **Innovation Feed**: Tabbed views with custom empty-state messaging and real-time status indicators.
 
-### ⚖️ Evaluation Workflow
-- **Status Pipeline**: Tracking ideas through `submitted`, `under_review`, `accepted`, and `rejected`.
-- **Admin Feedback**: High-level review system where admins can leave evaluation comments and update statuses.
-- **Transparency**: Submitters can view real-time feedback and status updates on their submissions.
+### 🗓 Interactive Workspace (New)
+- **Central Calendar**: Maps ideation onto a timeline. View ideas, events, and tasks in a unified desk view.
+- **Rich Task Management**: Tasks support detailed descriptions, tags, and time-spans (start/end) with status tracking.
+- **Day View Drawer**: Click any calendar date for a sliding breakdown of all ideas and todos for that specific day.
+
+### 🔔 Personalized Notifications (New)
+- **Event-Driven**: Immediate alerts when an idea is evaluated or a task is assigned.
+- **Zero-Refresh**: Frontend polling ensures you stay updated without reloading the dashboard.
+- **Dynamic Badge**: Visual indicators for unread alerts.
+
+### ⚖️ Professional Admin UX
+- **Redesigned Review Sidebar**: A modern sidebar for evaluating ideas with clear visuals and feedback loops.
+- **Task Assignment**: Admins can assign workspace tasks directly to specific users.
+- **Dashboard Metrics**: Performance charts (Chart.js) tracking success rates and submission trends.
 
 ---
 
-## 🏗 The Development Journey (Implementation Steps)
+## 🏗 Phases of Development
 
-This project was built following a rigorous **AI-Native Sprint Workflow**. Below is the step-by-step roadmap of how the portal was constructed:
-
-### Phase 1: Foundation & SDD Initialization
-1.  **Project Scaffolding**: Initialized the project with `uv`, setting up the `src/app` and `tests/` structure.
-2.  **SDD Configuration**: Initialized SpecKit and defined the **Project Constitution**, establishing TDD and 80%+ coverage as mandatory quality gates.
-3.  **Git Identity**: Configured repository identity for `senademirbas`.
-
-### Phase 2: Core Infrastructure (Auth)
-4.  **Database Layer**: Setup SQLAlchemy Base and session management.
-5.  **Security Utilities**: Implemented password hashing and JWT encoding/decoding logic.
-6.  **User Model**: Created the foundational User model with role support.
-7.  **Auth Integration**: Built the `/auth/register` and `/auth/login` endpoints using a TDD approach (Integration tests first).
-
-### Phase 3: Idea Submission System
-8.  **Idea Data Model**: Designed the `Idea` model with a foreign key relationship to `User`.
-9.  **File System Setup**: Implemented secure local storage logic in the `uploads/` directory.
-10. **Multipart API**: Built the `POST /ideas` endpoint to handle complex form data and file streams.
-11. **Owner-Only Listing**: Implemented logic to ensure users can only list and view their own submissions.
-
-### Phase 4: Evaluation Workflow & RBAC Polish
-12. **Status Tracking**: Expanded the database schema and Pydantic models to include `status` and `admin_comment`.
-13. **Evaluation Endpoint**: Created the `PATCH /admin/ideas/{id}/evaluate` endpoint, restricted strictly to admins via custom FastAPI dependencies.
-14. **Integration Testing**: Verified the full review loop (Submitter uploads -> Admin evaluates -> Submitter views feedback).
-
-### Phase 5: Quality Gates & Documentation
-15. **Verification Suite**: Finalized 13 integration tests achieving **94% total code coverage**.
-16. **ADR Documentation**: Documented key architectural decisions (ADR-001).
-17. **Project Summary**: Generated the final lab completion report and professional documentation.
+1.  **Foundation**: Scalable FastAPI architecture with `uv` and SpecKit SDD.
+2.  **Auth & Roles**: Secure JWT-based RBAC system.
+3.  **Ideation Engine**: Attachment-capable submission pipeline.
+4.  **Admin Workflow**: Status lifecycle management and evaluation feedback.
+5.  **Workspace**: Calendar integration and context-aware Day View drawers.
+6.  **Real-Time**: Notification engine for cross-role collaboration.
+7.  **Verification**: 44 integration tests achieving **91% code coverage**.
 
 ---
 
@@ -93,6 +82,8 @@ uv run fastapi dev src/app/main.py
 uv run pytest --cov=src --cov-report=term-missing
 ```
 
+**Final Stability**: 44/44 Passed | 91% Coverage
+
 ---
-**Course**: A!tech Bootcamp
+**Course**: Advanced Agentic Coding - EPAM Project
 **Developer**: senademirbas
