@@ -214,6 +214,8 @@ function populateUserUI(user) {
     } else {
         $('nav-ideas').classList.remove('hidden');
         $('nav-admin').classList.add('hidden');
+        const nu = $('nav-users');
+        if (nu) nu.classList.add('hidden');
     }
 }
 
@@ -304,6 +306,15 @@ function renderIdeaCard(idea, isAdmin = false) {
                 onclick="event.stopPropagation();openReviewDrawer(${JSON.stringify(idea).replace(/"/g, '&quot;')})">Review →</button>`
         : '';
 
+    const deleteBtn = idea.author?.email === state.user?.email || state.user?.role === 'admin'
+        ? `<button class="btn-icon" style="color:#ef4444; width:1.75rem; height:1.75rem" title="Delete Idea" 
+            onclick="event.stopPropagation(); if(confirm('Are you sure you want to delete this idea?')) deleteIdea('${idea.id}')">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+            </svg>
+           </button>`
+        : '';
+
     const avatarLetter = (author.email || '?')[0].toUpperCase();
 
     return `
@@ -323,6 +334,7 @@ function renderIdeaCard(idea, isAdmin = false) {
             <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0">
                 ${badge}
                 ${reviewBtn}
+                ${deleteBtn}
             </div>
         </div>
         <div>
@@ -338,13 +350,25 @@ function renderIdeaCard(idea, isAdmin = false) {
     </div>`;
 }
 
+function getEmptyMessage(filter, isAdmin) {
+    if (isAdmin) return { icon: '📭', title: 'No submissions yet', subtitle: 'Submissions will appear here.' };
+
+    switch (filter) {
+        case 'submitted': return { icon: '⏳', title: 'No pending ideas', subtitle: 'You have no ideas awaiting review.' };
+        case 'accepted': return { icon: '🎉', title: 'No accepted ideas yet', subtitle: 'Keep submitting great ideas!' };
+        case 'rejected': return { icon: '📈', title: 'No rejected ideas', subtitle: 'Good job!' };
+        default: return { icon: '💡', title: 'No ideas yet', subtitle: 'Click "New Idea" to submit your first.' };
+    }
+}
+
 function renderFeed(ideas, containerId, isAdmin = false) {
     const el = $(containerId);
     if (!ideas.length) {
-        el.innerHTML = `<div class="glass-card" style="padding:3rem 2rem;text-align:center;color:var(--text-muted)">
-            <p style="font-size:2rem;margin-bottom:0.75rem">${isAdmin ? '📭' : '💡'}</p>
-            <p style="font-weight:700;margin-bottom:0.375rem">${isAdmin ? 'No submissions yet' : 'No ideas yet'}</p>
-            <p style="font-size:0.875rem">${isAdmin ? 'Submissions will appear here.' : 'Click "New Idea" to submit your first.'}</p>
+        const msg = getEmptyMessage(state.activeFilter, isAdmin);
+        el.innerHTML = `<div class="glass-card" style="padding:3rem 2rem;text-align:center;color:var(--text-muted);column-span:all;break-inside:avoid;margin:2rem auto;max-width:32rem;">
+            <p style="font-size:2rem;margin-bottom:0.75rem">${msg.icon}</p>
+            <p style="font-weight:700;margin-bottom:0.375rem">${msg.title}</p>
+            <p style="font-size:0.875rem">${msg.subtitle}</p>
         </div>`;
         return;
     }
@@ -666,15 +690,37 @@ $('submit-idea-form').addEventListener('submit', async e => {
     fd.append('description', description);
     if (tags) fd.append('tags', tags);
 
+    const attachmentInput = $('idea-attachment');
+    if (attachmentInput && attachmentInput.files.length > 0) {
+        fd.append('attachment', attachmentInput.files[0]);
+    }
+
     const res = await apiFetch('/api/ideas', { method: 'POST', body: fd });
     if (res.ok) {
         showToast('Idea submitted successfully!');
         closeSubmitModal();
         loadMyIdeas();
     } else {
-        showToast((await res.json()).detail || 'Submission failed.', 'error');
+        const err = await res.json();
+        let msg = 'Submission failed.';
+        if (typeof err.detail === 'string') msg = err.detail;
+        else if (Array.isArray(err.detail) && err.detail.length > 0) msg = err.detail[0].msg;
+        showToast(msg, 'error');
     }
 });
+
+async function deleteIdea(id) {
+    const res = await apiFetch(`/api/ideas/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+        showToast('Idea deleted successfully.');
+        loadMyIdeas();
+        if (state.user?.role === 'admin') loadAllIdeas();
+    } else {
+        const err = await res.json();
+        const msg = typeof err.detail === 'string' ? err.detail : (Array.isArray(err.detail) && err.detail.length ? err.detail[0].msg : 'Failed to delete idea.');
+        showToast(msg, 'error');
+    }
+}
 
 // ─── Profile ──────────────────────────────────────────────────────────────────
 async function loadProfile() {
@@ -756,22 +802,68 @@ $('change-password-form').addEventListener('submit', async e => {
 });
 
 // ─── Notification Bell ────────────────────────────────────────────────────────
-const SEED_NOTIFS = [
-    { icon: '✅', text: 'Your idea was accepted by the admin!', time: '2 hours ago', unread: true },
-    { icon: '💡', text: 'You submitted a new idea — awaiting review.', time: 'Yesterday', unread: true },
-    { icon: '👋', text: 'Welcome to InnovatEPAM Portal!', time: '2 days ago', unread: false },
-];
-let _notifsRead = false;
+let notifications = [];
+
+async function loadNotifs() {
+    try {
+        const res = await fetch('/api/notifications', {
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        if (res.ok) {
+            notifications = await res.json();
+            updateNotifBadge();
+            if (!$('notif-panel').classList.contains('hidden')) {
+                renderNotifPanel();
+            }
+        }
+    } catch (err) { console.error('Error fetching notifications:', err); }
+}
+
+function updateNotifBadge() {
+    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const badge = $('notif-badge');
+    const countEl = $('notif-count');
+
+    if (unreadCount > 0) {
+        badge.style.display = 'block';
+        badge.style.opacity = '1';
+        countEl.textContent = unreadCount;
+    } else {
+        badge.style.display = 'none';
+        countEl.textContent = '0';
+    }
+}
 
 function renderNotifPanel() {
-    $('notif-list').innerHTML = SEED_NOTIFS.map(n => `
-        <div class="notif-item ${n.unread && !_notifsRead ? 'notif-unread' : ''}">
-            <div class="notif-icon">${n.icon}</div>
+    if (notifications.length === 0) {
+        $('notif-list').innerHTML = `<p style="padding:1rem;color:#6b7280;text-align:center;">No notifications yet.</p>`;
+        return;
+    }
+
+    // Map icons based on type
+    const getIcon = (type) => {
+        if (type === 'idea_review') return '✅';
+        if (type === 'new_idea') return '💡';
+        if (type === 'task_assigned') return '📋';
+        return '🔔';
+    };
+
+    const timeAgo = (dateStr) => {
+        const diff = Date.now() - new Date(dateStr + "Z").getTime();
+        const mins = Math.floor(diff / 60000);
+        if (mins < 60) return `${mins}m ago`;
+        if (mins < 1440) return `${Math.floor(mins / 60)}h ago`;
+        return `${Math.floor(mins / 1440)}d ago`;
+    };
+
+    $('notif-list').innerHTML = notifications.map(n => `
+        <div class="notif-item ${!n.is_read ? 'notif-unread' : ''}">
+            <div class="notif-icon">${getIcon(n.type)}</div>
             <div style="flex:1;min-width:0">
-                <p class="notif-text">${n.text}</p>
-                <p class="notif-time">${n.time}</p>
+                <p class="notif-text">${n.message}</p>
+                <p class="notif-time">${timeAgo(n.created_at)}</p>
             </div>
-            ${n.unread && !_notifsRead ? '<div class="notif-dot"></div>' : ''}
+            ${!n.is_read ? '<div class="notif-dot"></div>' : ''}
         </div>`).join('');
 }
 
@@ -782,12 +874,17 @@ function toggleNotifPanel() {
     if (isHidden) renderNotifPanel();
 }
 
-function clearNotifs() {
-    _notifsRead = true;
-    $('notif-badge').style.opacity = '0';
-    $('notif-count').textContent = '0';
-    renderNotifPanel();
+async function clearNotifs() {
+    try {
+        await fetch('/api/notifications/read', {
+            method: 'PATCH',
+            headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+        });
+        await loadNotifs(); // reload state
+    } catch (err) { console.error('Failed to mark read', err); }
 }
+
+setInterval(loadNotifs, 10000); // Polling every 10 seconds
 
 document.addEventListener('click', e => {
     if (!e.target.closest('#notif-btn') && !$('notif-panel').classList.contains('hidden')) {
@@ -842,7 +939,7 @@ async function loadWorkspace() {
     renderTodoList();
     // Load idea dates from cached ideas
     const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
-    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates);
+    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates, _todos);
 }
 
 function renderTodoList() {
@@ -852,25 +949,101 @@ function renderTodoList() {
         el.innerHTML = `<p style="font-size:0.8125rem;color:var(--text-muted);text-align:center;padding:1.5rem 0">No tasks yet. Add one above!</p>`;
         return;
     }
-    el.innerHTML = _todos.map(t => `
+    el.innerHTML = _todos.map(t => {
+        let timeLabel = '';
+        if (t.start_time || t.end_time) {
+            timeLabel = `⏱ ${t.start_time || ''}${t.start_time && t.end_time ? ' - ' : ''}${t.end_time || ''}`;
+        }
+        let tagsHtml = '';
+        if (t.tags) {
+            tagsHtml = t.tags.split(',').map(tag => `<span style="font-size:0.6rem;padding:0.125rem 0.375rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:9999px;margin-right:4px">${tag.trim()}</span>`).join('');
+        }
+
+        return `
         <div class="todo-item ${t.done ? 'done' : ''}">
             <div class="todo-checkbox" onclick="toggleTodo('${t.id}', ${!t.done})">
                 ${t.done ? `<svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="#fff" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>` : ''}
             </div>
-            <span class="todo-text">${t.text}</span>
+            <div style="display:flex;flex-direction:column;flex:1;min-width:0;gap:0.25rem">
+                <span class="todo-text" style="line-height:1.2;font-weight:700">${t.title}</span>
+                ${t.description ? `<span style="font-size:0.75rem;color:var(--text-muted);line-height:1.4">${t.description}</span>` : ''}
+                <div style="display:flex;align-items:center;flex-wrap:wrap;gap:0.5rem">
+                    ${t.date ? `<span style="font-size:0.7rem;color:var(--text-muted);font-weight:600">📅 ${t.date}</span>` : ''}
+                    ${timeLabel ? `<span style="font-size:0.7rem;color:var(--accent);font-weight:600">${timeLabel}</span>` : ''}
+                    ${tagsHtml ? `<div>${tagsHtml}</div>` : ''}
+                </div>
+            </div>
             <button class="todo-delete" onclick="deleteTodo('${t.id}')">✕</button>
-        </div>`).join('');
+        </div>`;
+    }).join('');
 }
 
-async function addTodo() {
-    const input = $('todo-input');
-    const text = input.value.trim();
-    if (!text) return;
-    const res = await apiFetch('/api/todos', { method: 'POST', body: JSON.stringify({ text }) });
+async function openTaskModal(prefillDate = null) {
+    $('task-title').value = '';
+    $('task-desc').value = '';
+    $('task-date').value = (typeof prefillDate === 'string' && prefillDate) ? prefillDate : '';
+    $('task-start').value = '';
+    $('task-end').value = '';
+    $('task-tags').value = '';
+
+    // If admin, populate users dropdown
+    if (state.currentUser?.role === 'admin') {
+        $('task-assign-group').classList.remove('hidden');
+        const res = await apiFetch('/api/admin/users');
+        if (res.ok) {
+            const users = await res.json();
+            const select = $('task-assign');
+            select.innerHTML = `<option value="">Myself</option>` + users.map(u =>
+                `<option value="${u.id}">${u.email} (${u.role})</option>`
+            ).join('');
+        }
+    } else {
+        $('task-assign-group').classList.add('hidden');
+    }
+
+    $('task-modal').classList.add('open');
+    $('drawer-overlay').classList.add('visible');
+}
+
+function closeTaskModal() {
+    $('task-modal').classList.remove('open');
+    $('drawer-overlay').classList.remove('visible');
+}
+
+async function saveTask() {
+    const title = $('task-title').value.trim();
+    if (!title) { showToast("Title is required", "error"); return; }
+
+    const description = $('task-desc').value.trim() || null;
+    const date = $('task-date').value || null;
+    const start_time = $('task-start').value || null;
+    const end_time = $('task-end').value || null;
+    const tags = $('task-tags').value.trim() || null;
+
+    let assignUserId = null;
+    if (state.currentUser?.role === 'admin') {
+        assignUserId = $('task-assign').value;
+    }
+
+    const payload = { title, description, date, start_time, end_time, tags };
+    if (assignUserId) payload.user_id = assignUserId;
+
+    const endpoint = '/api/todos';
+
+    const res = await apiFetch(endpoint, { method: 'POST', body: JSON.stringify(payload) });
     if (res.ok) {
-        input.value = '';
-        _todos.push(await res.json());
-        renderTodoList();
+        showToast('Task added successfully!');
+        closeTaskModal();
+        if (!assignUserId) {
+            _todos.push(await res.json());
+            renderTodoList();
+
+            // Re-render calendar to show new task if it has a date
+            const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
+            renderMiniCalendar(_calYear, _calMonth, _events, ideaDates, _todos);
+        } else {
+            showToast('Task assigned to user.');
+        }
     } else { showToast('Failed to add task.', 'error'); }
 }
 
@@ -880,6 +1053,10 @@ async function toggleTodo(id, done) {
         const updated = await res.json();
         _todos = _todos.map(t => t.id === id ? updated : t);
         renderTodoList();
+
+        // Re-render calendar to update task dot colors
+        const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
+        renderMiniCalendar(_calYear, _calMonth, _events, ideaDates, _todos);
     }
 }
 
@@ -889,6 +1066,10 @@ async function deleteTodo(id) {
         _todos = _todos.filter(t => t.id !== id);
         renderTodoList();
         showToast('Task deleted.');
+
+        // Re-render calendar
+        const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
+        renderMiniCalendar(_calYear, _calMonth, _events, ideaDates, _todos);
     }
 }
 
@@ -900,16 +1081,16 @@ function calPrev() {
     _calMonth--;
     if (_calMonth < 0) { _calMonth = 11; _calYear--; }
     const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
-    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates);
+    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates, _todos);
 }
 function calNext() {
     _calMonth++;
     if (_calMonth > 11) { _calMonth = 0; _calYear++; }
     const ideaDates = new Set(state.allIdeas.map(i => i.created_at?.slice(0, 10)).filter(Boolean));
-    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates);
+    renderMiniCalendar(_calYear, _calMonth, _events, ideaDates, _todos);
 }
 
-function renderMiniCalendar(year, month, events, ideaDates) {
+function renderMiniCalendar(year, month, events, ideaDates, todos) {
     const el = $('mini-calendar');
     const titleEl = $('cal-title');
     titleEl.textContent = `${MONTH_NAMES[month]} ${year}`;
@@ -930,13 +1111,35 @@ function renderMiniCalendar(year, month, events, ideaDates) {
         const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         const isToday = dateStr === todayStr;
         const hasIdea = ideaDates?.has(dateStr);
-        const hasEvent = eventDateSet.has(dateStr);
+
+        const dayEvents = events.filter(e => e.date === dateStr);
+        const dayTasks = (todos || []).filter(t => t.date === dateStr);
+
+        const hasEvent = dayEvents.length > 0;
+        const hasDoneTask = dayTasks.some(t => t.done);
+        const hasPendingTask = dayTasks.some(t => !t.done);
+
         const dots = [
-            hasIdea ? '<span class="cal-dot cal-dot-idea"></span>' : '',
-            hasEvent ? '<span class="cal-dot cal-dot-event"></span>' : ''
+            hasIdea ? '<span class="cal-dot" style="background:var(--primary)"></span>' : '',
+            hasEvent ? '<span class="cal-dot cal-dot-event"></span>' : '',
+            hasDoneTask ? '<span class="cal-dot" style="background:#22c55e"></span>' : '',
+            hasPendingTask ? '<span class="cal-dot" style="background:#9ca3af"></span>' : ''
         ].filter(Boolean).join('');
 
-        html += `<div class="cal-day ${isToday ? 'cal-today' : ''}" onclick="showAddEventForm('${dateStr}')">
+        let tooltipLines = [];
+        if (dayEvents.length) {
+            tooltipLines.push('📍 Events:');
+            dayEvents.forEach(e => tooltipLines.push(`  - ${e.time ? e.time + ' ' : ''}${e.title}`));
+        }
+        if (dayTasks.length) {
+            tooltipLines.push('📝 Tasks:');
+            dayTasks.forEach(t => tooltipLines.push(`  - [${t.done ? 'x' : ' '}] ${t.title} ${t.start_time ? '(' + t.start_time + ')' : ''}`));
+        }
+
+        const tooltip = tooltipLines.join('\n');
+        const titleAttr = tooltip ? `title="${tooltip.replace(/"/g, '&quot;')}"` : '';
+
+        html += `<div class="cal-day ${isToday ? 'cal-today' : ''}" ${titleAttr} onclick="openDayView('${dateStr}')">
             ${d}
             ${dots ? `<div class="cal-dots">${dots}</div>` : ''}
         </div>`;
@@ -945,10 +1148,88 @@ function renderMiniCalendar(year, month, events, ideaDates) {
     el.innerHTML = html;
 }
 
+// --- Day View Methods ---
+let _selectedDateStr = null;
+
+function openDayView(dateStr) {
+    if (!$('day-view-modal')) return;
+    _selectedDateStr = dateStr;
+    const dateObj = new Date(dateStr);
+    $('day-view-date').textContent = dateObj.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
+    const dayIdeas = state.allIdeas.filter(i => i.created_at?.slice(0, 10) === dateStr);
+    const dayEvents = _events.filter(e => e.date === dateStr);
+    const dayTasks = (_todos || []).filter(t => t.date === dateStr);
+
+    let html = '';
+
+    if (dayIdeas.length) {
+        html += `<div style="margin-bottom:1rem"><p class="section-label">Ideas Submitted</p>`;
+        dayIdeas.forEach(i => {
+            html += `<div style="background:var(--bg-elevated);padding:0.75rem;border-radius:0.5rem;border:1px solid var(--border);margin-bottom:0.5rem">
+                <span class="cal-dot" style="background:var(--primary)"></span> <span style="font-weight:600;font-size:0.875rem">${i.title}</span>
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    if (dayEvents.length) {
+        html += `<div style="margin-bottom:1rem"><p class="section-label">Events</p>`;
+        dayEvents.forEach(e => {
+            html += `<div style="background:var(--bg-elevated);padding:0.75rem;border-radius:0.5rem;border:1px solid var(--border);margin-bottom:0.5rem">
+                <span class="cal-dot cal-dot-event"></span> <span style="font-weight:600;font-size:0.875rem">${e.title}</span>
+                ${e.time ? `<div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.25rem">⏱ ${e.time}</div>` : ''}
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    if (dayTasks.length) {
+        html += `<div style="margin-bottom:1rem"><p class="section-label">Tasks</p>`;
+        dayTasks.forEach(t => {
+            const color = t.done ? '#22c55e' : '#9ca3af';
+            let timeLabel = '';
+            if (t.start_time || t.end_time) {
+                timeLabel = `⏱ ${t.start_time || ''}${t.start_time && t.end_time ? ' - ' : ''}${t.end_time || ''}`;
+            }
+            html += `<div style="background:var(--bg-elevated);padding:0.75rem;border-radius:0.5rem;border:1px solid var(--border);margin-bottom:0.5rem;opacity:${t.done ? 0.6 : 1}">
+                <span class="cal-dot" style="background:${color}"></span> <span style="font-weight:600;font-size:0.875rem;text-decoration:${t.done ? 'line-through' : 'none'}">${t.title}</span>
+                ${timeLabel ? `<div style="font-size:0.75rem;color:var(--accent);margin-top:0.25rem">${timeLabel}</div>` : ''}
+            </div>`;
+        });
+        html += `</div>`;
+    }
+
+    if (!html) {
+        html = `<p style="color:var(--text-muted);font-size:0.875rem;text-align:center;padding:2rem 0">Nothing scheduled for this day.</p>`;
+    }
+
+    $('day-view-content').innerHTML = html;
+    $('day-view-modal').classList.add('open');
+    $('drawer-overlay').classList.add('visible');
+}
+
+function closeDayView() {
+    $('day-view-modal').classList.remove('open');
+    $('drawer-overlay').classList.remove('visible');
+}
+
+function openDayAddEvent() {
+    closeDayView();
+    showAddEventForm(_selectedDateStr);
+}
+
+function openDayAddTask() {
+    closeDayView();
+    openTaskModal(_selectedDateStr);
+}
+
 function showAddEventForm(dateStr) {
     if (!$('event-modal')) return;
     $('event-date').value = dateStr;
     $('event-title').value = '';
+    const et = $('event-time'); if (et) et.value = '';
+    const ed = $('event-desc'); if (ed) ed.value = '';
     $('event-modal').classList.add('open');
     $('drawer-overlay').classList.add('visible');
 }
@@ -963,6 +1244,11 @@ async function saveCalendarEvent() {
     const date = $('event-date').value;
     const color = document.querySelector('input[name="event-color"]:checked')?.value || '#06b6d4';
 
+    const timeInput = $('event-time');
+    const descInput = $('event-desc');
+    const time = timeInput && timeInput.value ? timeInput.value : null;
+    const description = descInput && descInput.value.trim() ? descInput.value.trim() : null;
+
     if (!title || !date) {
         showToast('Please enter both title and date.', 'error');
         return;
@@ -970,7 +1256,7 @@ async function saveCalendarEvent() {
 
     const res = await apiFetch('/api/events', {
         method: 'POST',
-        body: JSON.stringify({ title, date, color })
+        body: JSON.stringify({ title, date, color, time, description })
     });
 
     if (res.ok) {

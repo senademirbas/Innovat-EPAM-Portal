@@ -31,6 +31,14 @@ def get_idea(db: Session, idea_id: str):
         .first()
     )
 
+def delete_idea(db: Session, idea_id: str) -> bool:
+    db_idea = db.query(Idea).filter(Idea.id == idea_id).first()
+    if db_idea:
+        db.delete(db_idea)
+        db.commit()
+        return True
+    return False
+
 def get_all_ideas(db: Session, skip: int = 0, limit: int = 100):
     return (
         db.query(Idea)

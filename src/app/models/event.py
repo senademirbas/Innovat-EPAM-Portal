@@ -14,4 +14,6 @@ class CalendarEvent(Base):
     user_id = Column(String, ForeignKey("users.id"), nullable=False, index=True)
     title = Column(String, nullable=False)
     date = Column(String, nullable=False)   # "YYYY-MM-DD"
+    time = Column(String, nullable=True)    # "HH:MM"
+    description = Column(String, nullable=True)
     color = Column(String, default="#06b6d4")

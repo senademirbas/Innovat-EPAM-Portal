@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import Annotated, List, Optional
+from pydantic import Field
 import shutil
 import os
 import uuid
@@ -10,6 +11,9 @@ from src.app.db.session import get_db
 from src.app.models.user import User
 from src.app.schemas.idea import IdeaPublic, IdeaCreate
 from src.app.crud import idea as crud_idea
+from src.app.crud import notification as crud_notif
+from src.app.crud import user as crud_user
+from src.app.schemas.notification import NotificationCreate
 
 router = APIRouter(prefix="/ideas", tags=["ideas"])
 
@@ -24,12 +28,12 @@ def _to_public(idea) -> dict:
 
 @router.post("", response_model=IdeaPublic, status_code=status.HTTP_201_CREATED)
 def create_idea(
-    title: str = Form(...),
-    description: str = Form(...),
-    category: str = Form(...),
-    tags: Optional[str] = Form(None),
-    problem_statement: Optional[str] = Form(None),
-    solution: Optional[str] = Form(None),
+    title: Annotated[str, Form(min_length=3, max_length=100)],
+    description: Annotated[str, Form(min_length=10, max_length=2000)],
+    category: Annotated[str, Form()],
+    tags: Annotated[Optional[str], Form()] = None,
+    problem_statement: Annotated[Optional[str], Form()] = None,
+    solution: Annotated[Optional[str], Form()] = None,
     attachment: Optional[UploadFile] = File(None),
     db: Session = Depends(get_db),
     current_user: User = Depends(deps.get_current_user)
@@ -47,6 +51,16 @@ def create_idea(
         tags=tags, problem_statement=problem_statement, solution=solution
     )
     db_idea = crud_idea.create_idea(db, idea_in, user_id=current_user.id, file_path=file_path)
+    
+    # Notify all admins about the new idea submission
+    admins = crud_user.get_users_by_role(db, role="admin")
+    for admin in admins:
+        crud_notif.create_notification(db, NotificationCreate(
+            user_id=admin.id,
+            message=f"New idea submitted: '{db_idea.title}' by {current_user.email}",
+            type="new_idea"
+        ))
+        
     return IdeaPublic.model_validate({**{c.name: getattr(db_idea, c.name) for c in db_idea.__table__.columns}, "author": db_idea.owner, "reviewer": db_idea.reviewer})
 
 @router.get("", response_model=List[IdeaPublic])
@@ -71,3 +85,21 @@ def read_idea(
     if idea.user_id != current_user.id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not enough permissions")
     return IdeaPublic.model_validate({**{c.name: getattr(idea, c.name) for c in idea.__table__.columns}, "author": idea.owner, "reviewer": idea.reviewer})
+
+@router.delete("/{idea_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_idea(
+    idea_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(deps.get_current_user)
+):
+    idea = crud_idea.get_idea(db, idea_id)
+    if not idea:
+        raise HTTPException(status_code=404, detail="Idea not found")
+    if idea.user_id != current_user.id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    success = crud_idea.delete_idea(db, idea_id)
+    if not success:
+        raise HTTPException(status_code=500, detail="Failed to delete idea")
+    
+    return None

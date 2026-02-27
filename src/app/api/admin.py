@@ -5,8 +5,11 @@ from src.app.api.deps import RoleChecker, get_current_user
 from src.app.db.session import get_db
 from src.app.schemas.user import User, UserAdminView, RoleUpdate
 from src.app.schemas.idea import IdeaPublic, IdeaEvaluation
+from src.app.schemas.todo import Todo, TodoCreate
 from src.app.crud import idea as crud_idea
 from src.app.crud import user as crud_user
+from src.app.crud import notification as crud_notif
+from src.app.schemas.notification import NotificationCreate
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
@@ -89,3 +92,25 @@ def update_user_role(
         if s["id"] == user_id:
             return s
     return user
+
+
+@router.post("/users/{user_id}/todos", response_model=Todo, dependencies=[Depends(RoleChecker(["admin"]))])
+def assign_todo_to_user(
+    user_id: str,
+    data: TodoCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(RoleChecker(["admin"]))
+):
+    """Assign a todo directly to a user's workspace (admin only)."""
+    # Ensure user exists
+    target = crud_user.get_user(db, user_id)
+    if not target:
+        raise HTTPException(status_code=404, detail="Target user not found.")
+    
+    # Tag the task with the admin's ID
+    if getattr(data, 'assigned_by', None) is None:
+        data.assigned_by = current_user.id
+        
+    # We can reuse the todo CRUD here
+    from src.app.crud import todo as crud_todo
+    return crud_todo.create_todo(db, user_id=user_id, data=data)

@@ -36,5 +36,9 @@ select = ["E", "F", "I", "N", "PL"]
 ignore = ["E501"] # Ignore long lines if handled by formatter
 fix = true
 
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+
 [tool.ruff.isort]
 known-first-party = ["app"]

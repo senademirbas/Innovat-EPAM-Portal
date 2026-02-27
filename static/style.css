@@ -22,9 +22,9 @@
 
     /* Dark mode values (default) */
     --bg-base: #0f172a;
-    --bg-surface: rgba(15, 23, 42, 0.85);
-    --bg-glass: rgba(15, 23, 42, 0.6);
-    --bg-elevated: rgba(30, 41, 59, 0.8);
+    --bg-surface: rgba(15, 23, 42, 0.95);
+    --bg-glass: rgba(15, 23, 42, 0.85);
+    --bg-elevated: rgba(30, 41, 59, 0.95);
     --border: rgba(255, 255, 255, 0.07);
     --border-hover: rgba(255, 255, 255, 0.14);
     --border-accent: rgba(6, 182, 212, 0.4);
@@ -61,6 +61,10 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
+    scrollbar-width: none;
+    /* Firefox */
+    -ms-overflow-style: none;
+    /* IE/Edge */
 }
 
 html {
@@ -78,14 +82,9 @@ body {
     transition: background 0.4s ease, color 0.4s ease;
 }
 
-/* Dark-first gradient background */
+/* Dark-first gradient background removed to fix right-side black scale */
 body:not(.light)::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    z-index: -1;
-    background: linear-gradient(135deg, #0f172a 0%, #0a192f 40%, #0d1b2e 70%, #0f172a 100%);
-    pointer-events: none;
+    display: none;
 }
 
 /* Auth page animated orbs */
@@ -1554,20 +1553,8 @@ textarea.input-field {
 
 /* Scrollbar global */
 ::-webkit-scrollbar {
-    width: 5px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 9999px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--border-hover);
+    width: 0px;
+    display: none;
 }
 
 /* Mobile sidebar overlay */

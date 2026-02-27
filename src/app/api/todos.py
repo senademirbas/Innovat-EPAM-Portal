@@ -4,6 +4,8 @@ from src.app.db.session import get_db
 from src.app.api.deps import get_current_user
 from src.app.schemas.todo import Todo, TodoCreate, TodoUpdate
 from src.app.crud import todo as crud_todo
+from src.app.crud import notification as crud_notif
+from src.app.schemas.notification import NotificationCreate
 
 router = APIRouter(prefix="/todos", tags=["todos"])
 
@@ -23,8 +25,23 @@ def create_todo(
     current_user=Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    """Create a new todo item."""
-    return crud_todo.create_todo(db, user_id=current_user.id, data=data)
+    """Create a new todo item. Admin can assign to others."""
+    target_user_id = current_user.id
+    if current_user.role == "admin" and data.user_id:
+        target_user_id = data.user_id
+        data.assigned_by = current_user.id
+        
+    todo = crud_todo.create_todo(db, user_id=target_user_id, data=data)
+    
+    # Notify target user if assigned by admin
+    if target_user_id != current_user.id:
+        crud_notif.create_notification(db, NotificationCreate(
+            user_id=target_user_id,
+            message=f"You've been assigned a new task: '{todo.title}' by {current_user.email}.",
+            type="task_assigned"
+        ))
+        
+    return todo
 
 
 @router.patch("/{todo_id}", response_model=Todo)

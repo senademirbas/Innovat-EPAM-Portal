@@ -10,7 +10,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script>tailwind.config = { darkMode: 'class' }</script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=3">
 </head>
 
 <body>
@@ -203,467 +203,487 @@
         <!-- Mobile sidebar overlay -->
         <div id="sidebar-overlay" class="sidebar-overlay" onclick="closeSidebar()"></div>
 
-        <!-- ── TOP BAR ─────────────────────────────── -->
-        <header id="topbar">
-            <!-- Hamburger -->
-            <button class="btn-icon" id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
-                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-            </button>
+        <!-- ── MAIN WRAPPER ────────────────────────── -->
+        <div id="main-content-wrapper"
+            style="flex:1; display:flex; flex-direction:column; min-width:0; overflow:hidden;">
 
-            <!-- Search -->
-            <div class="search-bar">
-                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
-                    style="color:var(--text-muted);flex-shrink:0">
-                    <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-                <input type="text" placeholder="Search ideas…" id="search-input">
-            </div>
-
-            <!-- Right actions -->
-            <div class="topbar-right">
-                <!-- Theme toggle -->
-                <button class="btn-icon" id="theme-toggle" title="Toggle theme">
-                    <svg id="icon-sun" width="18" height="18" fill="currentColor" viewBox="0 0 20 20" class="hidden">
-                        <path
-                            d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464l-.707-.707a1 1 0 111.414-1.414l.707.707a1 1 0 01-1.414 1.414z" />
-                    </svg>
-                    <svg id="icon-moon" width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+            <!-- ── TOP BAR ─────────────────────────────── -->
+            <header id="topbar">
+                <!-- Hamburger -->
+                <button class="btn-icon" id="sidebar-toggle" onclick="toggleSidebar()" title="Toggle sidebar">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                     </svg>
                 </button>
 
-                <!-- Notification bell -->
-                <div style="position:relative">
-                    <button class="btn-icon" id="notif-btn" onclick="toggleNotifPanel()" title="Notifications"
-                        style="position:relative">
-                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round"
-                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                <!-- Search -->
+                <div class="search-bar">
+                    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                        style="color:var(--text-muted);flex-shrink:0">
+                        <path stroke-linecap="round" stroke-linejoin="round"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <input type="text" placeholder="Search ideas…" id="search-input">
+                </div>
+
+                <!-- Right actions -->
+                <div class="topbar-right">
+                    <!-- Theme toggle -->
+                    <button class="btn-icon" id="theme-toggle" title="Toggle theme">
+                        <svg id="icon-sun" width="18" height="18" fill="currentColor" viewBox="0 0 20 20"
+                            class="hidden">
+                            <path
+                                d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464l-.707-.707a1 1 0 111.414-1.414l.707.707a1 1 0 01-1.414 1.414z" />
                         </svg>
-                        <span id="notif-badge"
-                            style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 6px var(--accent)"></span>
+                        <svg id="icon-moon" width="18" height="18" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                        </svg>
                     </button>
-                    <!-- Notification dropdown panel -->
-                    <div id="notif-panel" class="hidden" style="position:absolute;right:0;top:calc(100% + 0.625rem);width:22rem;z-index:200;
+
+                    <!-- Notification bell -->
+                    <div style="position:relative">
+                        <button class="btn-icon" id="notif-btn" onclick="toggleNotifPanel()" title="Notifications"
+                            style="position:relative">
+                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round"
+                                    d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            <span id="notif-badge"
+                                style="position:absolute;top:4px;right:4px;width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 6px var(--accent)"></span>
+                        </button>
+                        <!-- Notification dropdown panel -->
+                        <div id="notif-panel" class="hidden" style="position:absolute;right:0;top:calc(100% + 0.625rem);width:22rem;z-index:200;
                         background:var(--bg-surface);border:1px solid var(--border);border-radius:1rem;
                         backdrop-filter:blur(24px) saturate(1.8);-webkit-backdrop-filter:blur(24px) saturate(1.8);
                         box-shadow:0 24px 60px rgba(0,0,0,0.35);overflow:hidden">
-                        <div
-                            style="padding:1rem 1.25rem 0.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
-                            <p style="font-weight:800;font-size:0.9375rem">Notifications</p>
-                            <span id="notif-count"
-                                style="font-size:0.7rem;padding:0.15rem 0.6rem;border-radius:9999px;background:var(--accent);color:#fff;font-weight:700">3</span>
-                        </div>
-                        <div id="notif-list" style="max-height:19rem;overflow-y:auto;padding:0.5rem 0"></div>
-                        <div style="padding:0.625rem 1.25rem;border-top:1px solid var(--border);text-align:center">
-                            <button onclick="clearNotifs()"
-                                style="font-size:0.75rem;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">Mark
-                                all as read</button>
-                        </div>
-                    </div>
-                </div>
-
-
-                <!-- Avatar dropdown -->
-                <div style="position:relative">
-                    <button class="avatar-btn" id="avatar-dropdown-btn" onclick="toggleAvatarDropdown()">
-                        <div class="avatar" id="topbar-avatar"></div>
-                        <span id="topbar-email"
-                            style="font-size:0.8125rem;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
-                        <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                            stroke-width="2.5" style="color:var(--text-muted)">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-                        </svg>
-                    </button>
-                    <div id="avatar-dropdown" class="dropdown hidden">
-                        <div style="padding:0.75rem 1rem">
-                            <p style="font-size:0.8rem;font-weight:700" id="dd-email"></p>
-                            <p style="font-size:0.72rem;color:var(--text-muted)" id="dd-role"></p>
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <div class="dropdown-item" onclick="routeTo('profile');closeDropdown()">
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
-                            Profile
-                        </div>
-                        <div class="dropdown-divider"></div>
-                        <div class="dropdown-item" style="color:#ef4444" onclick="logout()">
-                            <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="2">
-                                <path stroke-linecap="round" stroke-linejoin="round"
-                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            Sign Out
+                            <div
+                                style="padding:1rem 1.25rem 0.75rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between">
+                                <p style="font-weight:800;font-size:0.9375rem">Notifications</p>
+                                <span id="notif-count"
+                                    style="font-size:0.7rem;padding:0.15rem 0.6rem;border-radius:9999px;background:var(--accent);color:#fff;font-weight:700">3</span>
+                            </div>
+                            <div id="notif-list" style="max-height:19rem;overflow-y:auto;padding:0.5rem 0"></div>
+                            <div style="padding:0.625rem 1.25rem;border-top:1px solid var(--border);text-align:center">
+                                <button onclick="clearNotifs()"
+                                    style="font-size:0.75rem;color:var(--text-muted);background:none;border:none;cursor:pointer;font-family:inherit;font-weight:600">Mark
+                                    all as read</button>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
-        </header>
 
-        <!-- ── PAGE CONTENT ───────────────────────── -->
-        <main id="page-content">
 
-            <!-- FEED VIEW (Submitter) -->
-            <section id="feed-view" class="hidden">
-                <div class="content-wrapper">
-                    <div
-                        style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
-                        <div>
-                            <h2 style="margin-bottom:0.25rem">Innovation Feed</h2>
-                            <p style="color:var(--text-muted);font-size:0.875rem">Your submitted and tracked ideas.</p>
-                        </div>
-                        <button class="btn-primary" id="open-submit-btn">
-                            <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                stroke-width="2.5">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    <!-- Avatar dropdown -->
+                    <div style="position:relative">
+                        <button class="avatar-btn" id="avatar-dropdown-btn" onclick="toggleAvatarDropdown()">
+                            <div class="avatar" id="topbar-avatar"></div>
+                            <span id="topbar-email"
+                                style="font-size:0.8125rem;font-weight:600;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+                            <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                stroke-width="2.5" style="color:var(--text-muted)">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                             </svg>
-                            New Idea
                         </button>
-                    </div>
-
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
-                        <button class="filter-chip active" data-filter="all">All</button>
-                        <button class="filter-chip" data-filter="submitted">Pending</button>
-                        <button class="filter-chip" data-filter="accepted">Accepted</button>
-                        <button class="filter-chip" data-filter="rejected">Rejected</button>
-                    </div>
-
-                    <div id="idea-feed"></div>
-                </div><!-- /.content-wrapper -->
-            </section>
-
-            <!-- ADMIN VIEW -->
-            <section id="admin-view" class="hidden">
-                <div class="content-wrapper">
-                    <div style="margin-bottom:1.5rem">
-                        <h2 style="margin-bottom:0.25rem">Admin Dashboard</h2>
-                        <p style="color:var(--text-muted);font-size:0.875rem">Review, evaluate, and monitor all
-                            submissions.
-                        </p>
-                    </div>
-
-                    <!-- KPI Cards -->
-                    <div
-                        style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
-                        <div class="kpi-card">
-                            <p class="kpi-label">Total Ideas</p>
-                            <p id="kpi-total" class="kpi-value">—</p>
-                            <p id="kpi-total-trend" class="kpi-trend flat"></p>
-                        </div>
-                        <div class="kpi-card">
-                            <p class="kpi-label">Accepted</p>
-                            <p id="kpi-accepted" class="kpi-value" style="color:#22c55e">—</p>
-                            <p id="kpi-accepted-trend" class="kpi-trend up"></p>
-                        </div>
-                        <div class="kpi-card">
-                            <p class="kpi-label">Pending</p>
-                            <p id="kpi-pending" class="kpi-value" style="color:#f59e0b">—</p>
-                            <p id="kpi-pending-trend" class="kpi-trend flat"></p>
-                        </div>
-                        <div class="kpi-card">
-                            <p class="kpi-label">Success Rate</p>
-                            <p id="kpi-rate" class="kpi-value" style="color:var(--accent)">—</p>
-                            <p id="kpi-rate-trend" class="kpi-trend up"></p>
-                        </div>
-                    </div>
-
-                    <!-- Chart -->
-                    <div class="chart-container" style="margin-bottom:1.5rem">
-                        <p class="section-label">Idea Submissions — Last 30 Days</p>
-                        <div style="height:220px"><canvas id="submissions-chart"></canvas></div>
-                    </div>
-
-                    <!-- All ideas feed -->
-                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-                        <p class="section-label" style="margin-bottom:0">All Submissions</p>
-                        <span id="admin-count" style="font-size:0.75rem;color:var(--text-muted)"></span>
-                    </div>
-                    <div id="admin-feed"></div>
-                </div><!-- /.content-wrapper -->
-            </section>
-
-            <!-- PROFILE VIEW -->
-            <section id="profile-view" class="hidden">
-                <div class="content-wrapper">
-                    <div style="margin-bottom:1.5rem">
-                        <h2 style="margin-bottom:0.25rem">My Profile</h2>
-                        <p style="color:var(--text-muted);font-size:0.875rem">Your identity, social links, and
-                            submission
-                            history.</p>
-                    </div>
-
-                    <div class="bento-grid">
-                        <!-- Identity card -->
-                        <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
-                            <div style="display:flex;align-items:center;gap:1rem">
-                                <div class="avatar-lg" id="profile-avatar-lg"></div>
-                                <div style="flex:1;min-width:0">
-                                    <h3 id="profile-name"
-                                        style="margin-bottom:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-                                    </h3>
-                                    <p id="profile-bio"
-                                        style="color:var(--text-muted);font-size:0.875rem;line-height:1.4;margin-bottom:0.625rem">
-                                    </p>
-                                    <div id="profile-social-links" style="display:flex;flex-wrap:wrap;gap:0.5rem"></div>
-                                </div>
+                        <div id="avatar-dropdown" class="dropdown hidden">
+                            <div style="padding:0.75rem 1rem">
+                                <p style="font-size:0.8rem;font-weight:700" id="dd-email"></p>
+                                <p style="font-size:0.72rem;color:var(--text-muted)" id="dd-role"></p>
                             </div>
-                            <div id="profile-role-pill" style="align-self:flex-start"></div>
-                        </div>
-
-                        <!-- Stats card -->
-                        <div class="glass-card" style="padding:1.75rem">
-                            <p class="section-label">Submission Stats</p>
-                            <div
-                                style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.875rem;margin-bottom:0.875rem">
-                                <div style="text-align:center">
-                                    <p id="stat-total" style="font-size:2rem;font-weight:800;letter-spacing:-0.03em">—
-                                    </p>
-                                    <p
-                                        style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
-                                        Total</p>
-                                </div>
-                                <div style="text-align:center">
-                                    <p id="stat-accepted"
-                                        style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#22c55e">—
-                                    </p>
-                                    <p
-                                        style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
-                                        Accepted</p>
-                                </div>
-                                <div style="text-align:center">
-                                    <p id="stat-rejected"
-                                        style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#ef4444">—
-                                    </p>
-                                    <p
-                                        style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
-                                        Rejected</p>
-                                </div>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item" onclick="routeTo('profile');closeDropdown()">
+                                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                Profile
                             </div>
-                            <div
-                                style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem;padding:1rem;text-align:center">
-                                <p id="stat-rate"
-                                    style="font-size:1.75rem;font-weight:800;color:var(--accent);letter-spacing:-0.03em">
-                                    —
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item" style="color:#ef4444" onclick="logout()">
+                                <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                                Sign Out
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- ── PAGE CONTENT ───────────────────────── -->
+            <main id="page-content">
+
+                <!-- FEED VIEW (Submitter) -->
+                <section id="feed-view" class="hidden">
+                    <div class="content-wrapper">
+                        <div
+                            style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+                            <div>
+                                <h2 style="margin-bottom:0.25rem">Innovation Feed</h2>
+                                <p style="color:var(--text-muted);font-size:0.875rem">Your submitted and tracked ideas.
                                 </p>
-                                <p style="font-size:0.75rem;color:var(--text-muted);font-weight:600">Success Rate</p>
                             </div>
+                            <button class="btn-primary" id="open-submit-btn">
+                                <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                    stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                New Idea
+                            </button>
                         </div>
 
-                        <!-- Edit profile form -->
-                        <div class="glass-card" style="padding:1.75rem">
-                            <h4 style="margin-bottom:1.25rem">Edit Profile</h4>
-                            <form id="edit-profile-form" style="display:flex;flex-direction:column;gap:1rem">
-                                <div>
-                                    <label
-                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Avatar
-                                        URL</label>
-                                    <input id="ep-avatar" type="url" class="input-field"
-                                        placeholder="https://example.com/avatar.png">
-                                </div>
-                                <div>
-                                    <label
-                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Bio</label>
-                                    <textarea id="ep-bio" class="input-field" rows="2" maxlength="200"
-                                        placeholder="A short description about yourself…"></textarea>
-                                </div>
-                                <div
-                                    style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
-                                    <div>
-                                        <label
-                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">GitHub</label>
-                                        <input id="ep-github" type="url" class="input-field"
-                                            placeholder="https://github.com/you">
-                                    </div>
-                                    <div>
-                                        <label
-                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">LinkedIn</label>
-                                        <input id="ep-linkedin" type="url" class="input-field"
-                                            placeholder="https://linkedin.com/in/you">
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn-primary" style="align-self:flex-start">Save
-                                    Profile</button>
-                            </form>
+                        <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem">
+                            <button class="filter-chip active" data-filter="all">All</button>
+                            <button class="filter-chip" data-filter="submitted">Pending</button>
+                            <button class="filter-chip" data-filter="accepted">Accepted</button>
+                            <button class="filter-chip" data-filter="rejected">Rejected</button>
                         </div>
 
-                        <!-- Change password -->
-                        <div class="glass-card" style="padding:1.75rem">
-                            <h4 style="margin-bottom:1.25rem">Change Password</h4>
-                            <form id="change-password-form" style="display:flex;flex-direction:column;gap:1rem">
-                                <div>
-                                    <label
-                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Current
-                                        Password</label>
-                                    <div class="pw-wrap">
-                                        <input id="cp-current" type="password" class="input-field"
-                                            placeholder="••••••••" required>
-                                        <button type="button" class="pw-toggle" onclick="togglePw('cp-current', this)"
-                                            title="Show/hide">
-                                            <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor" stroke-width="2" style="display:none">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label
-                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">New
-                                        Password</label>
-                                    <div class="pw-wrap">
-                                        <input id="cp-new" type="password" class="input-field"
-                                            placeholder="8+ characters" required minlength="8">
-                                        <button type="button" class="pw-toggle" onclick="togglePw('cp-new', this)"
-                                            title="Show/hide">
-                                            <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor" stroke-width="2" style="display:none">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label
-                                        style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Confirm
-                                        New</label>
-                                    <div class="pw-wrap">
-                                        <input id="cp-confirm" type="password" class="input-field"
-                                            placeholder="Repeat new password" required>
-                                        <button type="button" class="pw-toggle" onclick="togglePw('cp-confirm', this)"
-                                            title="Show/hide">
-                                            <svg class="eye-open" width="16" height="16" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor" stroke-width="2">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                            </svg>
-                                            <svg class="eye-shut" width="16" height="16" fill="none" viewBox="0 0 24 24"
-                                                stroke="currentColor" stroke-width="2" style="display:none">
-                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                    d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
-                                            </svg>
-                                        </button>
-                                    </div>
-                                </div>
-                                <button type="submit" class="btn-primary" style="align-self:flex-start">Update
-                                    Password</button>
-                            </form>
-                        </div>
-                    </div>
-                </div><!-- /.content-wrapper -->
-            </section>
+                        <div id="idea-feed"></div>
+                    </div><!-- /.content-wrapper -->
+                </section>
 
-            <!-- WORKSPACE VIEW -->
-            <section id="workspace-view" class="hidden">
-                <div class="content-wrapper">
-                    <div style="margin-bottom:1.5rem">
-                        <h2 style="margin-bottom:0.25rem">My Workspace</h2>
-                        <p style="color:var(--text-muted);font-size:0.875rem">Personal tasks and schedule at a glance.
-                        </p>
-                    </div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
-                        <!-- Todo Checklist -->
-                        <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
-                            <div style="display:flex;align-items:center;justify-content:space-between">
-                                <h4 style="font-size:1rem;font-weight:800">My Tasks</h4>
-                                <span id="todo-count"
-                                    style="font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:9999px;background:var(--bg-elevated);color:var(--text-muted);font-weight:700">0
-                                    tasks</span>
-                            </div>
-                            <!-- Add todo input -->
-                            <div style="display:flex;gap:0.5rem">
-                                <input id="todo-input" type="text" class="input-field" placeholder="Add a task…"
-                                    style="flex:1" onkeydown="if(event.key==='Enter')addTodo()">
-                                <button onclick="addTodo()" class="btn-primary"
-                                    style="padding:0.5rem 1rem;border-radius:0.625rem;flex-shrink:0">Add</button>
-                            </div>
-                            <!-- Todo list -->
-                            <div id="todo-list"
-                                style="display:flex;flex-direction:column;gap:0.5rem;max-height:24rem;overflow-y:auto">
-                            </div>
-                        </div>
-
-                        <!-- Mini Calendar -->
-                        <div class="glass-card" style="padding:1.75rem">
-                            <div
-                                style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-                                <button onclick="calPrev()" class="btn-icon" style="font-size:1rem">&#8249;</button>
-                                <h4 id="cal-title" style="font-size:0.9375rem;font-weight:800"></h4>
-                                <button onclick="calNext()" class="btn-icon" style="font-size:1rem">&#8250;</button>
-                            </div>
-                            <div id="mini-calendar" class="calendar-grid"></div>
-                            <div
-                                style="margin-top:1rem;display:flex;align-items:center;gap:1rem;font-size:0.7rem;color:var(--text-muted);font-weight:600">
-                                <span><span
-                                        style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:middle"></span>Idea</span>
-                                <span><span
-                                        style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;margin-right:4px;vertical-align:middle"></span>Event</span>
-                            </div>
-                        </div>
-                    </div>
-                </div><!-- /.content-wrapper -->
-            </section>
-
-            <!-- USERS VIEW (Admin Only) -->
-            <section id="users-view" class="hidden">
-                <div class="content-wrapper">
-                    <div
-                        style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
-                        <div>
-                            <h2 style="margin-bottom:0.25rem">User Management</h2>
-                            <p style="color:var(--text-muted);font-size:0.875rem">View, manage and promote registered
-                                users.
+                <!-- ADMIN VIEW -->
+                <section id="admin-view" class="hidden">
+                    <div class="content-wrapper">
+                        <div style="margin-bottom:1.5rem">
+                            <h2 style="margin-bottom:0.25rem">Admin Dashboard</h2>
+                            <p style="color:var(--text-muted);font-size:0.875rem">Review, evaluate, and monitor all
+                                submissions.
                             </p>
                         </div>
-                        <span id="users-count"
-                            style="font-size:0.8125rem;color:var(--text-muted);font-weight:600"></span>
-                    </div>
-                    <div class="glass-card" style="padding:0;overflow:hidden">
-                        <div style="overflow-x:auto">
-                            <table class="user-table" id="users-table">
-                                <thead>
-                                    <tr>
-                                        <th>User</th>
-                                        <th>Role</th>
-                                        <th>Total</th>
-                                        <th>Accepted</th>
-                                        <th>Rate</th>
-                                        <th>Activity</th>
-                                        <th>Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="users-tbody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div><!-- /.content-wrapper -->
-            </section>
 
-        </main>
+                        <!-- KPI Cards -->
+                        <div
+                            style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:1.5rem">
+                            <div class="kpi-card">
+                                <p class="kpi-label">Total Ideas</p>
+                                <p id="kpi-total" class="kpi-value">—</p>
+                                <p id="kpi-total-trend" class="kpi-trend flat"></p>
+                            </div>
+                            <div class="kpi-card">
+                                <p class="kpi-label">Accepted</p>
+                                <p id="kpi-accepted" class="kpi-value" style="color:#22c55e">—</p>
+                                <p id="kpi-accepted-trend" class="kpi-trend up"></p>
+                            </div>
+                            <div class="kpi-card">
+                                <p class="kpi-label">Pending</p>
+                                <p id="kpi-pending" class="kpi-value" style="color:#f59e0b">—</p>
+                                <p id="kpi-pending-trend" class="kpi-trend flat"></p>
+                            </div>
+                            <div class="kpi-card">
+                                <p class="kpi-label">Success Rate</p>
+                                <p id="kpi-rate" class="kpi-value" style="color:var(--accent)">—</p>
+                                <p id="kpi-rate-trend" class="kpi-trend up"></p>
+                            </div>
+                        </div>
+
+                        <!-- Chart -->
+                        <div class="chart-container" style="margin-bottom:1.5rem">
+                            <p class="section-label">Idea Submissions — Last 30 Days</p>
+                            <div style="height:220px"><canvas id="submissions-chart"></canvas></div>
+                        </div>
+
+                        <!-- All ideas feed -->
+                        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                            <p class="section-label" style="margin-bottom:0">All Submissions</p>
+                            <span id="admin-count" style="font-size:0.75rem;color:var(--text-muted)"></span>
+                        </div>
+                        <div id="admin-feed"></div>
+                    </div><!-- /.content-wrapper -->
+                </section>
+
+                <!-- PROFILE VIEW -->
+                <section id="profile-view" class="hidden">
+                    <div class="content-wrapper">
+                        <div style="margin-bottom:1.5rem">
+                            <h2 style="margin-bottom:0.25rem">My Profile</h2>
+                            <p style="color:var(--text-muted);font-size:0.875rem">Your identity, social links, and
+                                submission
+                                history.</p>
+                        </div>
+
+                        <div class="bento-grid">
+                            <!-- Identity card -->
+                            <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
+                                <div style="display:flex;align-items:center;gap:1rem">
+                                    <div class="avatar-lg" id="profile-avatar-lg"></div>
+                                    <div style="flex:1;min-width:0">
+                                        <h3 id="profile-name"
+                                            style="margin-bottom:0.2rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+                                        </h3>
+                                        <p id="profile-bio"
+                                            style="color:var(--text-muted);font-size:0.875rem;line-height:1.4;margin-bottom:0.625rem">
+                                        </p>
+                                        <div id="profile-social-links" style="display:flex;flex-wrap:wrap;gap:0.5rem">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div id="profile-role-pill" style="align-self:flex-start"></div>
+                            </div>
+
+                            <!-- Stats card -->
+                            <div class="glass-card" style="padding:1.75rem">
+                                <p class="section-label">Submission Stats</p>
+                                <div
+                                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:0.875rem;margin-bottom:0.875rem">
+                                    <div style="text-align:center">
+                                        <p id="stat-total"
+                                            style="font-size:2rem;font-weight:800;letter-spacing:-0.03em">—
+                                        </p>
+                                        <p
+                                            style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
+                                            Total</p>
+                                    </div>
+                                    <div style="text-align:center">
+                                        <p id="stat-accepted"
+                                            style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#22c55e">
+                                            —
+                                        </p>
+                                        <p
+                                            style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
+                                            Accepted</p>
+                                    </div>
+                                    <div style="text-align:center">
+                                        <p id="stat-rejected"
+                                            style="font-size:2rem;font-weight:800;letter-spacing:-0.03em;color:#ef4444">
+                                            —
+                                        </p>
+                                        <p
+                                            style="font-size:0.68rem;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;color:var(--text-muted)">
+                                            Rejected</p>
+                                    </div>
+                                </div>
+                                <div
+                                    style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem;padding:1rem;text-align:center">
+                                    <p id="stat-rate"
+                                        style="font-size:1.75rem;font-weight:800;color:var(--accent);letter-spacing:-0.03em">
+                                        —
+                                    </p>
+                                    <p style="font-size:0.75rem;color:var(--text-muted);font-weight:600">Success Rate
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Edit profile form -->
+                            <div class="glass-card" style="padding:1.75rem">
+                                <h4 style="margin-bottom:1.25rem">Edit Profile</h4>
+                                <form id="edit-profile-form" style="display:flex;flex-direction:column;gap:1rem">
+                                    <div>
+                                        <label
+                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Avatar
+                                            URL</label>
+                                        <input id="ep-avatar" type="url" class="input-field"
+                                            placeholder="https://example.com/avatar.png">
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Bio</label>
+                                        <textarea id="ep-bio" class="input-field" rows="2" maxlength="200"
+                                            placeholder="A short description about yourself…"></textarea>
+                                    </div>
+                                    <div
+                                        style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
+                                        <div>
+                                            <label
+                                                style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">GitHub</label>
+                                            <input id="ep-github" type="url" class="input-field"
+                                                placeholder="https://github.com/you">
+                                        </div>
+                                        <div>
+                                            <label
+                                                style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">LinkedIn</label>
+                                            <input id="ep-linkedin" type="url" class="input-field"
+                                                placeholder="https://linkedin.com/in/you">
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn-primary" style="align-self:flex-start">Save
+                                        Profile</button>
+                                </form>
+                            </div>
+
+                            <!-- Change password -->
+                            <div class="glass-card" style="padding:1.75rem">
+                                <h4 style="margin-bottom:1.25rem">Change Password</h4>
+                                <form id="change-password-form" style="display:flex;flex-direction:column;gap:1rem">
+                                    <div>
+                                        <label
+                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Current
+                                            Password</label>
+                                        <div class="pw-wrap">
+                                            <input id="cp-current" type="password" class="input-field"
+                                                placeholder="••••••••" required>
+                                            <button type="button" class="pw-toggle"
+                                                onclick="togglePw('cp-current', this)" title="Show/hide">
+                                                <svg class="eye-open" width="16" height="16" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <svg class="eye-shut" width="16" height="16" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                                                    style="display:none">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">New
+                                            Password</label>
+                                        <div class="pw-wrap">
+                                            <input id="cp-new" type="password" class="input-field"
+                                                placeholder="8+ characters" required minlength="8">
+                                            <button type="button" class="pw-toggle" onclick="togglePw('cp-new', this)"
+                                                title="Show/hide">
+                                                <svg class="eye-open" width="16" height="16" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <svg class="eye-shut" width="16" height="16" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                                                    style="display:none">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label
+                                            style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Confirm
+                                            New</label>
+                                        <div class="pw-wrap">
+                                            <input id="cp-confirm" type="password" class="input-field"
+                                                placeholder="Repeat new password" required>
+                                            <button type="button" class="pw-toggle"
+                                                onclick="togglePw('cp-confirm', this)" title="Show/hide">
+                                                <svg class="eye-open" width="16" height="16" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                                <svg class="eye-shut" width="16" height="16" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+                                                    style="display:none">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <button type="submit" class="btn-primary" style="align-self:flex-start">Update
+                                        Password</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div><!-- /.content-wrapper -->
+                </section>
+
+                <!-- WORKSPACE VIEW -->
+                <section id="workspace-view" class="hidden">
+                    <div class="content-wrapper">
+                        <div style="margin-bottom:1.5rem">
+                            <h2 style="margin-bottom:0.25rem">My Workspace</h2>
+                            <p style="color:var(--text-muted);font-size:0.875rem">Personal tasks and schedule at a
+                                glance.
+                            </p>
+                        </div>
+                        <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(400px, 1fr));gap:1.5rem">
+                            <!-- Todo Checklist -->
+                            <div class="glass-card" style="padding:1.75rem;display:flex;flex-direction:column;gap:1rem">
+                                <div style="display:flex;align-items:center;justify-content:space-between">
+                                    <h4 style="font-size:1rem;font-weight:800">My Tasks</h4>
+                                    <span id="todo-count"
+                                        style="font-size:0.7rem;padding:0.2rem 0.6rem;border-radius:9999px;background:var(--bg-elevated);color:var(--text-muted);font-weight:700">0
+                                        tasks</span>
+                                </div>
+                                <!-- Add todo input -->
+                                <button onclick="openTaskModal()" class="btn-primary"
+                                    style="align-self:flex-start;padding:0.5rem 1rem;border-radius:0.625rem">
+                                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                        stroke-width="2.5" style="margin-right:4px">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Add Task
+                                </button>
+                                <!-- Todo list -->
+                                <div id="todo-list"
+                                    style="display:flex;flex-direction:column;gap:0.5rem;max-height:24rem;overflow-y:auto">
+                                </div>
+                            </div>
+
+                            <!-- Mini Calendar -->
+                            <div class="glass-card" style="padding:1.75rem">
+                                <div
+                                    style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+                                    <button onclick="calPrev()" class="btn-icon" style="font-size:1rem">&#8249;</button>
+                                    <h4 id="cal-title" style="font-size:0.9375rem;font-weight:800"></h4>
+                                    <button onclick="calNext()" class="btn-icon" style="font-size:1rem">&#8250;</button>
+                                </div>
+                                <div id="mini-calendar" class="calendar-grid"></div>
+                                <div
+                                    style="margin-top:1rem;display:flex;align-items:center;gap:1rem;font-size:0.7rem;color:var(--text-muted);font-weight:600">
+                                    <span><span
+                                            style="display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:4px;vertical-align:middle"></span>Idea</span>
+                                    <span><span
+                                            style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#a78bfa;margin-right:4px;vertical-align:middle"></span>Event</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div><!-- /.content-wrapper -->
+                </section>
+
+                <!-- USERS VIEW (Admin Only) -->
+                <section id="users-view" class="hidden">
+                    <div class="content-wrapper">
+                        <div
+                            style="display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+                            <div>
+                                <h2 style="margin-bottom:0.25rem">User Management</h2>
+                                <p style="color:var(--text-muted);font-size:0.875rem">View, manage and promote
+                                    registered
+                                    users.
+                                </p>
+                            </div>
+                            <span id="users-count"
+                                style="font-size:0.8125rem;color:var(--text-muted);font-weight:600"></span>
+                        </div>
+                        <div class="glass-card" style="padding:0;overflow:hidden">
+                            <div style="overflow-x:auto">
+                                <table class="user-table" id="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Role</th>
+                                            <th>Total</th>
+                                            <th>Accepted</th>
+                                            <th>Rate</th>
+                                            <th>Activity</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-tbody"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div><!-- /.content-wrapper -->
+                </section>
+
+            </main>
+
+        </div> <!-- /.main-content-wrapper -->
 
     </div>
 
@@ -699,67 +719,94 @@
     </div>
 
     <!-- Review Drawer (Admin) -->
-    <div id="review-drawer" class="drawer">
-        <div class="drawer-header">
+    <div id="review-drawer" class="drawer" style="width:min(600px, 100vw)">
+        <div class="drawer-header" style="border-bottom: 1px solid var(--border); padding-bottom: 1rem">
             <div style="flex:1;min-width:0">
                 <p
-                    style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--text-muted);margin-bottom:0.375rem">
-                    Review Submission</p>
+                    style="font-size:0.75rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--accent);margin-bottom:0.25rem">
+                    Admin Evaluation
+                </p>
                 <h3 id="rd-title"
-                    style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:0.375rem"></h3>
-                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap">
+                    style="font-size:1.5rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:0.5rem">
+                </h3>
+                <div style="display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap">
                     <span id="rd-category"
-                        style="font-size:0.75rem;padding:0.2rem 0.65rem;border-radius:9999px;border:1px solid var(--border);color:var(--text-muted);font-weight:600"></span>
+                        style="font-size:0.75rem;padding:0.25rem 0.75rem;background:var(--bg-elevated);border-radius:9999px;border:1px solid var(--border);color:var(--text-muted);font-weight:600"></span>
                     <span id="rd-status"></span>
                 </div>
             </div>
-            <button class="btn-icon" onclick="closeDrawers()" style="flex-shrink:0;margin-left:0.75rem">
-                <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <button class="btn-icon" onclick="closeDrawers()"
+                style="flex-shrink:0;margin-left:1rem;background:var(--bg-elevated)">
+                <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
         </div>
-        <div class="drawer-body">
-            <!-- Author -->
+        <div class="drawer-body" style="display:flex;flex-direction:column;gap:1.5rem">
+
+            <!-- Author Card -->
             <div id="rd-author-row"
-                style="display:flex;align-items:center;gap:0.75rem;padding:0.875rem;background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem">
+                style="display:flex;align-items:center;gap:1rem;padding:1rem;background:linear-gradient(145deg, var(--bg-elevated), transparent);border:1px solid var(--border);border-radius:1rem;box-shadow:0 4px 6px -1px rgba(0,0,0,0.1)">
+            </div>
+
+            <!-- Content Grid -->
+            <div style="display:grid;gap:1.5rem">
+                <div>
+                    <h4
+                        style="font-size:0.875rem;color:var(--text-muted);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 6h16M4 12h16M4 18h7" />
+                        </svg>
+                        Description
+                    </h4>
+                    <div
+                        style="background:var(--bg-elevated);border:1px solid var(--border);border-left:4px solid var(--primary);border-radius:0.75rem;padding:1.25rem">
+                        <p id="rd-description" style="font-size:0.9375rem;line-height:1.7;white-space:pre-wrap"></p>
+                    </div>
+                </div>
+
+                <div id="rd-problem-row" class="hidden">
+                    <h4
+                        style="font-size:0.875rem;color:var(--text-muted);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Problem Statement
+                    </h4>
+                    <div
+                        style="background:var(--bg-elevated);border:1px solid var(--border);border-left:4px solid #ef4444;border-radius:0.75rem;padding:1.25rem">
+                        <p id="rd-problem" style="font-size:0.9375rem;line-height:1.7"></p>
+                    </div>
+                </div>
+
+                <div id="rd-solution-row" class="hidden">
+                    <h4
+                        style="font-size:0.875rem;color:var(--text-muted);margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem">
+                        <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                        </svg>
+                        Proposed Solution
+                    </h4>
+                    <div
+                        style="background:var(--bg-elevated);border:1px solid var(--border);border-left:4px solid #22c55e;border-radius:0.75rem;padding:1.25rem">
+                        <p id="rd-solution" style="font-size:0.9375rem;line-height:1.7"></p>
+                    </div>
+                </div>
             </div>
 
             <!-- Tags -->
-            <div id="rd-tags" style="display:flex;flex-wrap:wrap;gap:0.375rem"></div>
-
-            <!-- Description -->
-            <div>
-                <p class="section-label">Description</p>
-                <div
-                    style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem;padding:1rem">
-                    <p id="rd-description" style="font-size:0.875rem;line-height:1.65;white-space:pre-wrap"></p>
-                </div>
-            </div>
-
-            <!-- Problem -->
-            <div id="rd-problem-row" class="hidden">
-                <p class="section-label">Problem Statement</p>
-                <div
-                    style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem;padding:1rem">
-                    <p id="rd-problem" style="font-size:0.875rem;line-height:1.65"></p>
-                </div>
-            </div>
-
-            <!-- Solution -->
-            <div id="rd-solution-row" class="hidden">
-                <p class="section-label">Proposed Solution</p>
-                <div
-                    style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:0.75rem;padding:1rem">
-                    <p id="rd-solution" style="font-size:0.875rem;line-height:1.65"></p>
-                </div>
-            </div>
+            <div id="rd-tags" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.5rem"></div>
 
             <!-- Attachment -->
-            <div id="rd-attach-row" class="hidden">
+            <div id="rd-attach-row" class="hidden" style="margin-top:0.5rem">
                 <a id="rd-attach-link" href="#" target="_blank"
-                    style="display:inline-flex;align-items:center;gap:0.5rem;font-size:0.875rem;font-weight:600;color:var(--accent);text-decoration:none">
-                    <svg width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    style="display:inline-flex;align-items:center;gap:0.5rem;font-size:0.875rem;font-weight:600;color:var(--bg);background:var(--text);padding:0.75rem 1.25rem;border-radius:9999px;text-decoration:none;transition:transform 0.2s ease, opacity 0.2s ease"
+                    onmouseover="this.style.opacity='0.9';this.style.transform='translateY(-1px)'"
+                    onmouseout="this.style.opacity='1';this.style.transform='none'">
+                    <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round"
                             d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                     </svg>
@@ -769,17 +816,39 @@
 
             <input type="hidden" id="rd-idea-id">
         </div>
-        <div class="drawer-footer">
+
+        <!-- Evaluation Footer -->
+        <div class="drawer-footer"
+            style="background:var(--bg-elevated);border-top:1px solid var(--border);padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem">
             <div>
-                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Evaluation Comment
-                    <span style="color:#ef4444">*</span></label>
+                <label style="display:block;font-size:0.875rem;font-weight:700;margin-bottom:0.75rem;color:var(--text)">
+                    Evaluation <span style="color:#ef4444">*</span>
+                </label>
                 <textarea id="rd-comment" class="input-field" rows="3"
-                    placeholder="Provide detailed, constructive feedback…"></textarea>
+                    placeholder="Provide detailed, constructive feedback for the submitter…"
+                    style="resize:none;font-size:0.9375rem"></textarea>
             </div>
-            <div class="actions">
-                <button class="btn-success" style="flex:1" onclick="submitReview('accepted')">✓ Accept</button>
-                <button class="btn-danger" style="flex:1" onclick="submitReview('rejected')">✗ Reject</button>
-                <button class="btn-ghost" onclick="closeDrawers()">Cancel</button>
+            <div style="display:flex;gap:1rem">
+                <button class="btn-success"
+                    style="flex:2;padding:0.875rem;font-size:1rem;border-radius:0.75rem;box-shadow:0 4px 12px rgba(34,197,94,0.3)"
+                    onclick="submitReview('accepted')">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"
+                        style="margin-right:0.5rem;vertical-align:middle">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                    </svg>
+                    Approve
+                </button>
+                <button class="btn-danger"
+                    style="flex:2;padding:0.875rem;font-size:1rem;border-radius:0.75rem;box-shadow:0 4px 12px rgba(239,68,68,0.3)"
+                    onclick="submitReview('rejected')">
+                    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"
+                        style="margin-right:0.5rem;vertical-align:middle">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                    Reject
+                </button>
+                <button class="btn-ghost" style="flex:1;padding:0.875rem;border-radius:0.75rem"
+                    onclick="closeDrawers()">Cancel</button>
             </div>
         </div>
     </div>
@@ -856,6 +925,15 @@
                         placeholder="What is your idea and what problem does it solve?" required></textarea>
                 </div>
 
+                <!-- Attachment -->
+                <div>
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">
+                        Attachment (Optional)
+                    </label>
+                    <input id="idea-attachment" type="file" class="input-field" style="padding:0.4rem"
+                        accept=".pdf,.doc,.docx,.png,.jpg,.jpeg">
+                </div>
+
                 <!-- Submit -->
                 <div style="display:flex;gap:0.75rem;padding-top:0.25rem">
                     <button type="button" class="btn-ghost" onclick="closeSubmitModal()">Cancel</button>
@@ -893,12 +971,26 @@
         </div>
         <div class="drawer-body">
             <div>
-                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Title</label>
-                <input id="event-title" type="text" class="input-field" placeholder="e.g. Design Sync">
+                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Title <span
+                        style="color:#ef4444">*</span></label>
+                <input id="event-title" type="text" class="input-field" placeholder="e.g. Design Sync" required>
+            </div>
+            <div style="display:flex;gap:0.75rem">
+                <div style="flex:1">
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Date <span
+                            style="color:#ef4444">*</span></label>
+                    <input id="event-date" type="date" class="input-field" required>
+                </div>
+                <div style="flex:1">
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Time
+                        (Optional)</label>
+                    <input id="event-time" type="time" class="input-field">
+                </div>
             </div>
             <div>
-                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Date</label>
-                <input id="event-date" type="date" class="input-field">
+                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Description
+                    (Optional)</label>
+                <textarea id="event-desc" class="input-field" rows="2" placeholder="Meeting link or agenda…"></textarea>
             </div>
             <div>
                 <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Color</label>
@@ -921,7 +1013,90 @@
             </div>
         </div>
     </div>
+    <!-- Task Modal -->
+    <div id="task-modal" class="drawer" style="width:min(450px, 100vw)">
+        <div class="drawer-header">
+            <h3>Add Task</h3>
+            <button class="btn-icon" onclick="closeTaskModal()">✕</button>
+        </div>
+        <div class="drawer-body">
+            <div>
+                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Title <span
+                        style="color:#ef4444">*</span></label>
+                <input id="task-title" type="text" class="input-field" placeholder="What needs to be done?">
+            </div>
+            <div>
+                <label
+                    style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Description</label>
+                <textarea id="task-desc" class="input-field" rows="2" placeholder="More details..."></textarea>
+            </div>
+            <div style="display:flex;gap:0.75rem">
+                <div style="flex:1">
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Date</label>
+                    <input id="task-date" type="date" class="input-field">
+                </div>
+                <div style="flex:1">
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Tags</label>
+                    <input id="task-tags" type="text" class="input-field" placeholder="e.g. bug, docs">
+                </div>
+            </div>
+            <div style="display:flex;gap:0.75rem">
+                <div style="flex:1">
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Start
+                        Time</label>
+                    <input id="task-start" type="time" class="input-field">
+                </div>
+                <div style="flex:1">
+                    <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">End
+                        Time</label>
+                    <input id="task-end" type="time" class="input-field">
+                </div>
+            </div>
+            <!-- Admin only user assignment -->
+            <div id="task-assign-group" class="hidden">
+                <label style="display:block;font-size:0.8125rem;font-weight:600;margin-bottom:0.5rem">Assign to
+                    User</label>
+                <select id="task-assign" class="input-field">
+                    <option value="">Myself</option>
+                </select>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <button class="btn-primary" onclick="saveTask()" style="width:100%">Save Task</button>
+        </div>
+    </div>
+
+    <!-- Day View Modal -->
+    <div id="day-view-modal" class="drawer" style="width:min(450px, 100vw)">
+        <div class="drawer-header">
+            <div>
+                <p
+                    style="font-size:0.75rem;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.25rem">
+                    Day View</p>
+                <h3 id="day-view-date"></h3>
+            </div>
+            <button class="btn-icon" onclick="closeDayView()">✕</button>
+        </div>
+        <div class="drawer-body">
+            <div id="day-view-content" style="display:flex;flex-direction:column;gap:1.5rem"></div>
+        </div>
+        <div class="drawer-footer">
+            <div style="display:flex;gap:0.75rem">
+                <button class="btn-primary" onclick="openDayAddEvent()" style="flex:1">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg> Add Event
+                </button>
+                <button class="btn-primary" onclick="openDayAddTask()" style="flex:1">
+                    <svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                    </svg> Add Task
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
-<script src="app.js"></script>
+<script src="app.js?v=8"></script>
+
 </html>
