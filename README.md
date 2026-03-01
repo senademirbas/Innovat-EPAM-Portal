@@ -50,6 +50,30 @@ InnovatEPAM Portal is an enterprise innovation platform built to manage engineer
 
 ---
 
+## 🤖 Using SpecKit with GitHub Copilot
+
+This project is configured with **SpecKit SDD (Spec-Driven Development)** agents located in `.github/agents/`. You can use GitHub Copilot Chat in VS Code to orchestrate the entire development lifecycle.
+
+To use the agents, open your Copilot Chat window and use the `#file` command to reference the specific agent you want to trigger:
+
+1. **Specification Phase**: 
+   > `#file speckit.specify.agent.md` "Add a new user notification feature"
+   _Creates a predictable `spec.md` with requirements, success criteria, and edge-cases._
+
+2. **Planning Phase**:
+   > `#file speckit.plan.agent.md` Create a technical plan for the user notification spec.
+   _Generates an implementation blueprint detailing which files to modify and how._
+
+3. **Task Definition Phase**:
+   > `#file speckit.tasks.agent.md` Break the plan down into a checklist.
+   _Orchestrates the plan into actionable sub-tasks._
+
+4. **Implementation Phase**:
+   > `#file speckit.implement.agent.md` Implement Task 1 and Task 2.
+   _Generates the actual code based on the checklist steps._
+
+---
+
 ## 🚀 Getting Started
 
 ### Prerequisites
